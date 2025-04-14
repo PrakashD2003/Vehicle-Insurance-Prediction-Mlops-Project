@@ -1,0 +1,17 @@
+[project]
+name = "src"
+version = "0.0.1"
+description = "Vehicle Insurance Prediction Mlops Project"
+authors = [
+    { name = "Prakash Dwivedi", email = "prakash.dwivedi2003@gmail.com" }
+]
+
+[tool.setuptools]
+packages = { find = {} }
+
+[tool.setuptools.dynamic]
+dependencies = { file = ["requirements.txt"] }
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
