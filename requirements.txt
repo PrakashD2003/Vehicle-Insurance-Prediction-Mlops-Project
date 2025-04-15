@@ -19,4 +19,5 @@ uvicorn
 jinja2
 imblearn
 colorlog
+xgboost
 -e .

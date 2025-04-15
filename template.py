@@ -28,7 +28,7 @@ files_list = [
 
     # Data Access layer
     f"{project_name}/Data_Access/__init__.py",
-    f"{project_name}/Data_Access/Project_1_Data.py",
+    f"{project_name}/Data_Access/Vehicle_Insurance_Data.py",
 
     # Constants module (for storing constant values)
     f"{project_name}/Constants/__init__.py",
