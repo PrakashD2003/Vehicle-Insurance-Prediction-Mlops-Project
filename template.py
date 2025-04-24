@@ -10,12 +10,12 @@ files_list = [
 
     # Components module - Contains modular scripts for different pipeline stages
     f"{project_name}/Components/__init__.py",
-    f"{project_name}/Components/1_Data_Ingestion.py",
-    f"{project_name}/Components/2_Data_Validation.py",
-    f"{project_name}/Components/3_Data_Transformation.py",
-    f"{project_name}/Components/4_Data_Trainer.py",
-    f"{project_name}/Components/5_Data_Evaluation.py",
-    f"{project_name}/Components/6_Data_Pusher.py",
+    f"{project_name}/Components/S1_Data_Ingestion.py",
+    f"{project_name}/Components/S2_Data_Validation.py",
+    f"{project_name}/Components/S3_Data_Transformation.py",
+    f"{project_name}/Components/S4_Data_Trainer.py",
+    f"{project_name}/Components/S5_Model_Evaluation.py",
+    f"{project_name}/Components/S6_Model_Pusher.py",
 
     # Configuration module - Handles database and cloud config
     f"{project_name}/Configuration/__init__.py",

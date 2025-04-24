@@ -11,6 +11,7 @@ dill
 certifi
 PyYAML
 boto3
+boto3-stubs[essential]
 mypy-boto3-s3
 botocore
 fastapi

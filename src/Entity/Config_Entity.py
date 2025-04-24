@@ -2,13 +2,13 @@ import os
 from dataclasses import dataclass
 from datetime import datetime
 from src.Constants import *
-
+from src.Constants.global_logging import LOG_SESSION_TIME
 TIMESTAMP = datetime.now().strftime('%d_%m_%Y_%H_%M_%S')
 
 @dataclass
 class TrainingPipelinConfig:
     pipeline_name:str = PIPELINE_NAME
-    artifact_dir:str = os.path.join(ARTIFACT_DIR,TIMESTAMP)
+    artifact_dir:str = os.path.join(ARTIFACT_DIR,LOG_SESSION_TIME)
     timestamp: str = TIMESTAMP
 
 training_pipeline_congfig: TrainingPipelinConfig = TrainingPipelinConfig()
@@ -39,12 +39,12 @@ class DataTransformationConfig:
     data_transformation_transformed_object_file_path: str = os.path.join(data_transformation_dir,
                                                      DATA_TRANSFORMATION_TRANSFORMED_OBJECT_DIR,
                                                      PREPROCSSING_OBJECT_FILE_NAME)
-    
+    data_transformation_dump_categories_path: str = os.path.join(ARTIFACT_DIR,DATA_TRANSFORMATOIN_DUMP_CATEGORIES_FILE_NAME)
 @dataclass
 class ModelTrainerConfig:
     model_trainer_dir:str = os.path.join(training_pipeline_congfig.artifact_dir,MODEL_TRAINER_DIR_NAME)
     model_trainer_trained_model_file_path:str = os.path.join(model_trainer_dir,MODEL_TRAINER_TRAINED_MODEL_DIR,MODEL_TRAINER_TRAINED_MODEL_NAME)
-    model_trainer_expected_accuracy:float = MODEL_TRAINER_EXPECTED_SCORE
+    model_trainer_expected_accuracy:float = MODEL_TRAINER_EXPECTED_ACCURACY
     model_config_yaml_file_path:str = MODEL_TRAINER_MODEL_CONFIG_FILE_PATH
     _n_estimators = MODEL_TRAINER_N_ESTIMATORS
     _min_samples_split = MODEL_TRAINER_MIN_SAMPLES_SPLIT
@@ -52,3 +52,23 @@ class ModelTrainerConfig:
     _max_depth = MIN_SAMPLES_SPLIT_MAX_DEPTH
     _criterion = MIN_SAMPLES_SPLIT_CRITERION
     _random_state = MIN_SAMPLES_SPLIT_RANDOM_STATE
+
+@dataclass
+class ModelEvaluationConfig:
+    model_evaluation_change_threshold_score: float = MODEL_EVALUATION_CHANGE_THRESHOLD
+    bucket_name: str = MODEL_BUCKET_NAME
+    s3_model_key_path: str = f"{MODEL_S3_PRIFIX_KEY.rstrip('/')}/{MODEL_FILE_NAME}"
+
+@dataclass
+class ModelPusherConfig:
+    bucket_name: str = MODEL_BUCKET_NAME
+    s3_model_key_path: str = f"{MODEL_S3_PRIFIX_KEY.rstrip('/')}/{MODEL_FILE_NAME}"
+    local_artifact_path: str = LOCAL_ARTIFACTS_PATH
+    local_logs_path: str = LOCAL_LOGS_PATH
+    s3_artifact_prefix = S3_ARTIFACTS_PREFIX
+    s3_logs_prefix = S3_LOGS_PREFIX
+
+@dataclass
+class VehiclePredictorConfig:
+    s3_model_file_path: str = f"{MODEL_S3_PRIFIX_KEY.rstrip('/')}/{MODEL_FILE_NAME}"
+    model_bucket_name: str = MODEL_BUCKET_NAME

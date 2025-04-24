@@ -87,8 +87,8 @@ class DataIngestion:
             logger.info("Train-Test-Split Completed.")
             
             logger.debug("Creating directories to save train-test-data...")
-            training_data_file_path = self.data_ingestion_config.training_file_path
-            testing_data_file_path = self.data_ingestion_config.testing_file_path
+            training_data_file_path = self.data_ingestion_config.training_data_file_path
+            testing_data_file_path = self.data_ingestion_config.test_data_file_path
             os.makedirs(os.path.dirname(training_data_file_path),exist_ok=True)
             os.makedirs(os.path.dirname(testing_data_file_path),exist_ok=True)
             logger.info(f"Directories Created Successfully at '{os.path.dirname(training_data_file_path)}'and {testing_data_file_path}")
@@ -121,8 +121,11 @@ class DataIngestion:
         MyException
             If any step in the ingestion pipeline fails.
         """
-        logger.info("Entered initiate_data_ingestion method of Data_Ingestion class")
         try:
+            
+            logger.info("Entered initiate_data_ingestion method of Data_Ingestion class")
+            print("\n" + "-"*80)
+            print("🚀 Starting Data Ingestion Component...")
             dataframe = self.import_data_to_feature_store()
 
             self.save_data_as_train_test_split(dataframe=dataframe)

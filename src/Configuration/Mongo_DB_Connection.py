@@ -8,16 +8,6 @@ from src.Logger import configure_logger
 from src.Exception import MyException
 from src.Constants import DATABASE_NAME, MONGODB_CONNECTION_URL
 
-# ------------------------------------------------------------------ #
-#  Global logger (file + console) for this module
-# ------------------------------------------------------------------ #
-base_logger = configure_logger(
-    logger_name=__name__,
-    level="DEBUG",
-    to_console=True,
-    to_file=True,
-    log_file_name=__name__
-)
 
 CA_BUNDLE_PATH = certifi.where()  # Path to Mozilla CA bundle
 
@@ -45,7 +35,14 @@ class MongoDBClient:
             # ------------------------------------------------------------------
             # 1) Resolve connection URL from environment
             # ------------------------------------------------------------------
-            self.logger = logger or base_logger
+            self.logger = logger or configure_logger(
+                                                    logger_name=__name__,
+                                                    level="DEBUG",
+                                                    to_console=True,
+                                                    to_file=True,
+                                                    log_file_name=__name__
+                                                    )
+ 
             connection_url = os.getenv(MONGODB_CONNECTION_URL)
             if connection_url is None:
                 msg = (

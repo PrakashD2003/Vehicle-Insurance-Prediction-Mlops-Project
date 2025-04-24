@@ -2,6 +2,7 @@ import os
 import pandas as pd
 import numpy as np
 import sys
+import time
 from typing import Optional
 from logging import Logger
 from src.Logger import configure_logger
@@ -13,13 +14,7 @@ from src.Constants import DATABASE_NAME
 # ------------------------------------------------------------------ #
 #  Global logger (file + console) for this module
 # ------------------------------------------------------------------ #
-base_logger = configure_logger(
-    logger_name=__name__,
-    level="DEBUG",
-    to_console=True,
-    to_file=True,
-    log_file_name=__name__
-)
+
 
 class Vehicle_Insurance_Data:
     """
@@ -30,7 +25,13 @@ class Vehicle_Insurance_Data:
         """
         Initializes the MongoDB client connection.
         """
-        self.logger = logger or base_logger
+        self.logger = logger or configure_logger(
+                                        logger_name=__name__,
+                                        level="DEBUG",
+                                        to_console=True,
+                                        to_file=True,
+                                        log_file_name=__name__
+                                        )
         try:
             self.mongo_client = MongoDBClient(database_name=DATABASE_NAME,logger=self.logger)
         except Exception as e:
@@ -52,29 +53,37 @@ class Vehicle_Insurance_Data:
         pd.DataFrame
             DataFrame containing the collection data, with '_id' column removed and 'na' values replaced with NaN.
         """
-        try:
-            self.logger.debug('Fetching data from MongoDB...')
+        self.logger.debug('Fetching data from MongoDB...')
+        MAX_RETRIES = 3
+        DELAY = 5 # Seconds
+            
+        for attempt in range(1, MAX_RETRIES + 1):
+            try:
+                # Select collection from specified or default database
+                if database_name is None:
+                    self.logger.info("Using default database...")
+                    collection = self.mongo_client.database[collection_name]
+                else:
+                    self.logger.info("Using supplied database...")
+                    collection = self.mongo_client._client[database_name][collection_name]
 
-            # Select collection from specified or default database
-            if database_name is None:
-                collection = self.mongo_client.database[collection_name]
-            else:
-                collection = self.mongo_client._client[database_name][collection_name]
 
-            self.logger.info("Data fetched successfully.")
+                df = pd.DataFrame(list(collection.find()))
+                self.logger.info("Data fetched successfully.")
+                self.logger.debug("Converting MongoDB collection to DataFrame and droping default _id column...")
 
-            self.logger.debug("Converting MongoDB collection to DataFrame and droping default _id column...")
-            df = pd.DataFrame(list(collection.find()))
+                # Drop '_id' column if exists
+                if "_id" in df.columns:
+                    df.drop(columns=["_id"], axis=1, inplace=True)
+                # Replace string 'na' with np.nan
+                df.replace({"na": np.nan}, inplace=True)
+                self.logger.info(f"Collection Converted to : {pd.DataFrame} and 'na' replaced with 'np.nan'")
+                self.logger.info(f"Returning DataFrame with shape: {df.shape}")
 
-            # Drop '_id' column if exists
-            if "_id" in df.columns:
-                df.drop(columns=["_id"], axis=1, inplace=True)
-            # Replace string 'na' with np.nan
-            df.replace({"na": np.nan}, inplace=True)
-            self.logger.info(f"Collection Converted to : {df.dtypes} and 'na' replaced with 'np.nan'")
-            self.logger.info(f"Returning DataFrame with shape: {df.shape}")
+                return df
 
-            return df
-
-        except Exception as e:
-            raise MyException(error_message=e, error_detail=sys, logger=self.logger) 
+            except Exception as e:
+                self.logger.warning(f"[Attempt {attempt}] Failed to fetch data: {e}")
+                if attempt == MAX_RETRIES:
+                        raise MyException(error_message=e, error_detail=sys, logger=self.logger)
+                time.sleep(DELAY)

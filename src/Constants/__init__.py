@@ -1,5 +1,6 @@
 import os
 from datetime import date
+from src.Constants.global_logging import LOG_SESSION_TIME
 
 """
  MongoDB Connection Variables
@@ -30,17 +31,12 @@ RAW_DATA_FILE_NAME: str = "data.csv"
 TRAIN_FILE_NAME: str = "train.csv"
 TEST_FILE_NAME: str = "test.csv"
 SCHEMA_FILE_PATH = os.path.join("config", "schema.yaml")
-"""
- AWS Credentials
-"""
-AWS_ACCESS_KEY_ID_ENV_KEY = "AWS_ACCESS_KEY_ID"
-AWS_SECRET_ACCESS_KEY_ENV_KEY = "AWS_SECRET_ACCESS_KEY"
-REGION_NAME = "ap-apsouth-1"
+
 
 """
 Data Ingestion related constant start with DATA_INGESTION VAR NAME
 """
-DATA_INGESTION_COLLECTION_NAME: str = "Vehicle_Insurance_Data"
+DATA_INGESTION_COLLECTION_NAME: str = "Vehicle-Insurance-Proj-Data"
 DATA_INGESTION_DIR_NAME: str = "data_ingestion"
 DATA_INGESTION_FEATURE_STORE_DIR: str = "feature_store"
 DATA_INGESTION_INGESTED_DIR: str = "ingested"
@@ -58,6 +54,7 @@ Data Transformation ralated constant start with DATA_TRANSFORMATION VAR NAME
 DATA_TRANSFORMATION_DIR_NAME: str = "data_transformation"
 DATA_TRANSFORMATION_TRANSFORMED_DATA_DIR: str = "transformed"
 DATA_TRANSFORMATION_TRANSFORMED_OBJECT_DIR: str = "transformed_object"
+DATA_TRANSFORMATOIN_DUMP_CATEGORIES_FILE_NAME: str = "categories.json"
 
 """
 MODEL TRAINER related constant start with MODEL_TRAINER var name
@@ -65,7 +62,7 @@ MODEL TRAINER related constant start with MODEL_TRAINER var name
 MODEL_TRAINER_DIR_NAME:str = 'model_trainer'
 MODEL_TRAINER_TRAINED_MODEL_DIR:str = 'trained_model'
 MODEL_TRAINER_TRAINED_MODEL_NAME:str = 'model.pkl'
-MODEL_TRAINER_EXPECTED_SCORE:float = 0.6
+MODEL_TRAINER_EXPECTED_ACCURACY: float = 0.7121
 MODEL_TRAINER_MODEL_CONFIG_FILE_PATH:str = os.path.join("congfig","model.yaml")
 MODEL_TRAINER_N_ESTIMATORS=200
 MODEL_TRAINER_MIN_SAMPLES_SPLIT: int = 7
@@ -73,3 +70,32 @@ MODEL_TRAINER_MIN_SAMPLES_LEAF: int = 6
 MIN_SAMPLES_SPLIT_MAX_DEPTH: int = 10
 MIN_SAMPLES_SPLIT_CRITERION: str = 'entropy'
 MIN_SAMPLES_SPLIT_RANDOM_STATE: int = 101
+
+"""
+AWS Credentials--
+"""
+AWS_ACCESS_KEY_ID: str = "AWS_ACCESS_KEY_ID"
+AWS_SECRET_ACCESS_KEY: str = "AWS_SECRET_ACCESS_KEY"
+AWS_REGION: str = "ap-south-1" 
+
+"""
+MODEL Evaluation related constants
+"""
+MODEL_EVALUATION_CHANGE_THRESHOLD: float = 0.02
+MODEL_BUCKET_NAME: str = "vehicle-insurance-prediction-mlops-s3"
+MODEL_S3_PRIFIX_KEY: str = "model-registry"
+
+"""
+MODEL PUSHER relates constant
+"""
+LOCAL_ARTIFACTS_PATH: str = os.path.join("artifact", LOG_SESSION_TIME)
+LOCAL_LOGS_PATH: str = os.path.join("logs", LOG_SESSION_TIME)
+
+# S3 prefixes (always use forward slashes)
+S3_ARTIFACTS_PREFIX = f"artifacts/{LOG_SESSION_TIME}/"
+S3_LOGS_PREFIX = f"logs/{LOG_SESSION_TIME}/"
+
+
+
+APP_HOST = "0.0.0.0"
+APP_PORT = 5000

@@ -1,3 +1,27 @@
+# Local Terraform directories
+.terraform/
+
+# Crash log
+crash.log
+
+# Terraform state
+*.tfstate
+*.tfstate.backup
+
+# Sensitive override files
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# CLI configuration
+.terraformrc
+terraform.rc
+
+# Plan outputs
+*.tfplan
+
+
 artifact/
 logs/
 CrashCourse.txt

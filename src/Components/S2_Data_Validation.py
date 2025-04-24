@@ -70,7 +70,10 @@ class DataValidation:
             logger.debug("Validating column data types...")
             mismatched_types = []
 
-            expected_dtypes = self._schema_config.get("columns")
+            # Convert list of dicts to a flat dict
+            expected_dtypes_list = self._schema_config.get("columns")
+            expected_dtypes = {list(d.keys())[0]: list(d.values())[0] for d in expected_dtypes_list}
+
 
             for column, expected_dtype in expected_dtypes.items():
                 if column not in dataframe.columns:
@@ -164,6 +167,9 @@ class DataValidation:
             If any error occurs during validation steps.
         """
         try:
+            logger.info("Entered 'initiate_data_validation' method of DataValidation class...")
+            print("\n" + "-"*80)
+            print("🚀 Starting Data Validation Component...")
             errors = []
             logger.info("Starting Data_Validation...")
             logger.debug(f"Loading Train-Test Data from: '{self.data_ingestion_artifact.training_data_file_path}' and {self.data_ingestion_artifact.test_data_file_path} ...")

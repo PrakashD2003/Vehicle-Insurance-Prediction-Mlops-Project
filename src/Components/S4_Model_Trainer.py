@@ -5,10 +5,11 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score, precision_score, f1_score, recall_score
 from src.Exception import MyException
 from src.Logger import configure_logger
+from src.Constants import __file__ as constant_file_path
 from src.Entity.Config_Entity import ModelTrainerConfig
 from src.Entity.Artifact_Entity import DataTransformationArtifact, ClassificationMetricArtifact, ModelTrainerArtifact
 from src.Entity.Estimator import MyModel
-from src.Utils.Main_Utils import load_numpy_array, load_object, save_object
+from src.Utils.Main_Utils import load_numpy_array, load_object, save_object, update_expected_accuracy_in_constants
 
 logger = configure_logger(logger_name=__name__, level="DEBUG", to_console=True, to_file=True, log_file_name=__name__)
 
@@ -16,8 +17,19 @@ logger = configure_logger(logger_name=__name__, level="DEBUG", to_console=True, 
 class ModelTrainer:
     def __init__(self,data_transformation_artifact:DataTransformationArtifact, model_trainer_config:ModelTrainerConfig):
         """
-        :param data_transformation_artifact: Output reference of data transformation artifact stage
-        :param model_trainer_config: Configuration for model training
+        Constructor to initialize ModelTrainer class
+
+        Parameters
+        ----------
+        data_transformation_artifact : DataTransformationArtifact
+            Object containing paths to transformed training and testing data and preprocessor
+        model_trainer_config : ModelTrainerConfig
+            Configuration parameters for model training such as hyperparameters and output paths
+
+        Raises
+        ------
+        MyException
+            If initialization fails due to any reason
         """
         try:
             self.data_transformation_artifact = data_transformation_artifact
@@ -29,11 +41,24 @@ class ModelTrainer:
 
     def train_model(self, train_data:np.array, test_data:np.array) ->Tuple[RandomForestClassifier, ClassificationMetricArtifact]:
         """
-        Method Name :   get_model_object_and_report
-        Description :   This function trains a RandomForestClassifier with specified parameters
-        
-        Output      :   Returns metric artifact object and trained model object
-        On Failure  :   Write an exception log and then raise an exception
+        Trains a RandomForestClassifier model and evaluates its performance.
+
+        Parameters
+        ----------
+        train_data : np.ndarray
+            Combined array of training features and target (last column is target)
+        test_data : np.ndarray
+            Combined array of testing features and target (last column is target)
+
+        Returns
+        -------
+        Tuple[RandomForestClassifier, ClassificationMetricArtifact]
+            Trained RandomForestClassifier and evaluation metrics
+
+        Raises
+        ------
+        MyException
+            If training or evaluation fails
         """
         try:
             logger.debug("Entered the train_model function of ModelTrainer Class...")
@@ -76,11 +101,22 @@ class ModelTrainer:
     
     def initiate_model_trainer(self) -> ModelTrainerArtifact:
         """
-        Method Name :   initiate_model_trainer
-        Description :   This function initiates the model training steps
-        
-        Output      :   Returns model trainer artifact
-        On Failure  :   Write an exception log and then raise an exception
+        Initiates the model training process:
+        - Loads preprocessed training and test data
+        - Trains a RandomForestClassifier
+        - Validates model performance against threshold
+        - Saves the model wrapped with preprocessing pipeline
+        - Returns artifact containing trained model path and evaluation metrics
+
+        Returns
+        -------
+        ModelTrainerArtifact
+            Contains path to saved model and classification metrics
+
+        Raises
+        ------
+        MyException
+            If any step in model training pipeline fails
         """
         try:
             logger.info("Entered initiate_model_trainer method of ModelTrainer class...")
@@ -105,9 +141,13 @@ class ModelTrainer:
                 logger.info("No model found with score above the base score")
                 raise Exception("No model found with score above the base score")
             
+            # Updating expected accuracy since new accuracy is better
+            logger.debug("Updating MODEL_TRAINER_EXPECTED_ACCURACY since new model have better performane...")
+            update_expected_accuracy_in_constants(file_path=constant_file_path,new_accuracy=classification_report.accuracy_score,logger=logger)
+            
             # Save the final model object that includes both preprocessing and the trained model
             logger.info("Saving new model as performace is better than previous one...")
-            my_model = MyModel(preprocessing_object=preprocessing_obj, trained_model_object=trained_model)
+            my_model = MyModel(preprocessing_object=preprocessing_obj, trained_model_object=trained_model, logger=logger)
             save_object(self.model_trainer_config.model_trainer_trained_model_file_path, my_model,logger=logger)
             logger.info("Saved final model object that includes both preprocessing and the trained model")
             

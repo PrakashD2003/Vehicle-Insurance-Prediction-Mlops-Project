@@ -11,7 +11,7 @@ from src.Logger import configure_logger
 from src.Exception import MyException
 from src.Entity.Config_Entity import DataTransformationConfig, DataValidationConfig
 from src.Entity.Artifact_Entity import DataTransformationArtifact, DataIngestionArtifact, DataValidationArtifact
-from src.Utils.Main_Utils import read_csv_data, read_yaml, save_object, save_numpy_array
+from src.Utils.Main_Utils import read_csv_data, read_yaml, save_object, save_numpy_array, _dump_categories
 from src.Constants import SCHEMA_FILE_PATH, RANDOM_STATE, TARGET_COLUMN
 
 logger = configure_logger(logger_name=__name__,level="DEBUG",to_console=True,to_file=True,log_file_name=__name__)
@@ -51,8 +51,8 @@ class DataTransformation:
             standard_scaler = StandardScaler()
             min_max_scaler = MinMaxScaler()
             # Load Schema Configuration from Schema.yaml
-            standard_feature = self._schema_config['num_columns']
-            min_max_feature = self._schema_config['mm_columns']
+            standard_feature = self._schema_config['num_features']
+            min_max_feature = self._schema_config['mm_features']
             logger.info("Transformers Initialized: StandardScaler-MinMaxScaler")
 
              # Creating preprocessor pipeline
@@ -89,7 +89,7 @@ class DataTransformation:
             raise MyException(error_message=e, error_detail=sys, logger=logger) from e
     
     # Note make this function schema driven
-    def _rename_columns(self, dataframe:pd.DataFrame)->pd.DataFrame:
+    def _rename_columns(self, dataframe: pd.DataFrame) -> pd.DataFrame:
         """
         Renames encoded columns to clean and valid names (e.g., no spaces or special chars).
 
@@ -100,16 +100,27 @@ class DataTransformation:
         - DataFrame with renamed columns
         """
         try:
-            logger.debug("Renaming coloumn names changed due to creating dummy columns(one-hot-encoding)")
-            dataframe = dataframe.rename({
-                "Gender_1":"Gender_Male",
+            logger.debug("Renaming column names changed due to creating dummy columns (one-hot encoding)")
+            rename_map = {
+                "Gender_1": "Gender_Male",
                 "Vehicle_Age_< 1 Year": "Vehicle_Age_lt_1_Year",
                 "Vehicle_Age_> 2 Years": "Vehicle_Age_gt_2_Years"
-            })
-            logger.info("Column names changed succussfully.")
+            }
+
+            actual_rename_map = {k: v for k, v in rename_map.items() if k in dataframe.columns}
+
+            if not actual_rename_map:
+                logger.warning("No columns matched for renaming.")
+            else:
+                dataframe = dataframe.rename(columns=actual_rename_map)
+                logger.info(f"Renamed columns: {actual_rename_map}")
+
             return dataframe
+
         except Exception as e:
             raise MyException(error_message=e, error_detail=sys, logger=logger) from e
+
+    
         
     def _drop_column(self, dataframe:pd.DataFrame, columns:Optional[list]=None)->pd.DataFrame:
         """
@@ -144,7 +155,7 @@ class DataTransformation:
         X : pd.DataFrame
             The feature set before resampling.
 
-        y : pd.Series
+        Y : pd.Series
             The target labels before resampling.
 
         Returns
@@ -229,11 +240,17 @@ class DataTransformation:
             If any step in the transformation process fails.
         """
         try:
+            logger.info("Entered 'initiate_data_transformation' method of DataTransformation class...")
+            print("\n" + "-"*80)
+            print("🚀 Starting Data Transformation Component...")
+
             logger.debug("Data transformation started...")
             logger.debug(f"Loading training data from: {self.data_ingestion_artifact.training_data_file_path} \nLoading test data from: {self.data_ingestion_artifact.test_data_file_path}")
             train_data = read_csv_data(self.data_ingestion_artifact.training_data_file_path,logger=logger)
             test_data = read_csv_data(self.data_ingestion_artifact.test_data_file_path,logger=logger)
             logger.info("Data Successfully Loaded.")
+           
+            _dump_categories(train_data, save_file_path=self.data_transformation_config.data_transformation_dump_categories_path) 
             
             logger.debug("Spliting input features and target feature from dataset...")
             train_input_features = train_data.drop(columns=self._schema_config['target_columns'])
@@ -247,9 +264,11 @@ class DataTransformation:
             train_input_features = self._drop_column(train_input_features, columns=self._schema_config['drop_columns'])
             train_input_features = self.apply_one_hot_encoding(train_input_features,columns=self._schema_config['categorical_columns'])
             train_input_features = self._rename_columns(train_input_features)
+
        
             
             resampled_train_input_features, resampled_train_target_features = self.apply_smoteenn_resampling(train_input_features,train_target_features)
+            print("Columns before fit_transform:", resampled_train_input_features.columns.tolist())
             
             preprocessor = self.get_data_transformer_object()
             logger.info("Got the preprocessor object.")
@@ -269,6 +288,8 @@ class DataTransformation:
             test_input_features = self._drop_column(test_input_features, columns=self._schema_config['drop_columns'])
             test_input_features = self.apply_one_hot_encoding(test_input_features,columns=self._schema_config['categorical_columns'])
             test_input_features = self._rename_columns(test_input_features)
+            print("Columns before transform test_data:", test_input_features.columns.tolist())
+
            
             logger.info("Got the preprocessor object.")
             scaled_input_features_test_data_arr = preprocessor.transform(test_input_features)
