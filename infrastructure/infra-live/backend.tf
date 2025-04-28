@@ -14,8 +14,3 @@ terraform {
     encrypt        = true                       # Ensures that the state file is encrypted using AES-256 encryption.
   }
 }
-
-provider "aws" {
-  region = var.aws_region # AWS region is set using a variable
-}
-

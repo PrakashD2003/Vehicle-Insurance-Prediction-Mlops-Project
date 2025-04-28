@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" x-data="{ showGuide: false, loading: false }">
+<html lang="en" x-data="{ showGuide: false, loading: false, trainLoading: false, trainMessage: '' }">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -24,15 +24,49 @@
 </head>
 <body class="min-h-screen flex items-center justify-center p-4">
     <div class="container max-w-2xl w-full frosted rounded-2xl shadow-xl p-8">
-        <h1 class="text-4xl neon text-center mb-4">🚗 Insurance Predictor</h1>
+        <!-- Main Heading & Train Button -->
+        <div class="flex items-center justify-between mb-4">
+            <h1 class="text-4xl neon text-cyan-400">🚗 Insurance Predictor</h1>
+            <button
+                type="button"
+                @click="
+                    trainLoading = true;
+                    trainMessage = 'Training started...';
+                    fetch('/train')
+                      .then(res => res.text())
+                      .then(msg => {
+                        trainMessage = msg || 'Training completed!';
+                        trainLoading = false;
+                      })
+                      .catch(err => {
+                        trainMessage = 'Error during training';
+                        trainLoading = false;
+                      });
+                "
+                :disabled="trainLoading"
+                class="px-4 py-2 bg-gradient-to-r from-green-500 to-green-700 text-white rounded-full neon hover:opacity-90 transition-opacity duration-200"
+                title="Trigger model training">
+                <span x-show="!trainLoading">Train Model</span>
+                <span x-show="trainLoading">Training...</span>
+            </button>
+        </div>
+        <!-- Training Message -->
+        <template x-if="trainMessage">
+            <div class="mb-4 p-4 rounded-lg bg-blue-800 text-blue-200 neon" x-text="trainMessage"></div>
+        </template>
+
         <!-- User Guide Toggle -->
         <div class="text-right mb-4">
-            <button @click="showGuide = !showGuide" x-text="showGuide ? 'Hide Guide' : 'How to use this app?'" class="text-sm text-cyan-400 hover:underline focus:outline-none"></button>
+            <button @click="showGuide = !showGuide"
+                    x-text="showGuide ? 'Hide Guide' : 'How to use this app?'"
+                    class="text-sm neon text-cyan-400 hover:underline focus:outline-none">
+            </button>
         </div>
+
         <!-- User Guide Section -->
         <div x-show="showGuide" x-transition class="mb-6 p-4 bg-gray-800 text-gray-200 rounded-lg">
-            <p><strong>What this app does:</strong> Predicts if a customer is likely to purchase insurance.</p>
-            <ul class="list-disc list-inside text-sm">
+            <p class="text-gray-100"><strong>What this app does:</strong> Predicts if a customer is likely to purchase insurance.</p>
+            <ul class="list-disc list-inside text-sm text-gray-100">
                 <li>Enter your personal info under <em>Personal Info</em>.</li>
                 <li>Provide vehicle details under <em>Vehicle Info</em>.</li>
                 <li>Fill insurance-related fields under <em>Insurance Info</em>.</li>
@@ -43,34 +77,37 @@
         <!-- Prediction Result -->
         {% if context and context != 'Rendering' %}
             {% if context == 'Response-Yes' %}
-            <div class="mb-4 p-4 bg-green-800 text-green-200 rounded-lg neon">
-                ✅ This customer <strong>is likely</strong> to purchase insurance.
-            </div>
+                <div class="mb-4 p-4 bg-green-800 text-green-200 rounded-lg neon">
+                    ✅ This customer <strong>is likely</strong> to purchase insurance.
+                </div>
             {% else %}
-            <div class="mb-4 p-4 bg-red-800 text-red-200 rounded-lg neon">
-                ❌ This customer <strong>is not likely</strong> to purchase insurance.
-            </div>
+                <div class="mb-4 p-4 bg-red-800 text-red-200 rounded-lg neon">
+                    ❌ This customer <strong>is not likely</strong> to purchase insurance.
+                </div>
             {% endif %}
         {% endif %}
 
         <form method="post" action="/" class="space-y-6" @submit.prevent="loading = true; $el.submit();">
             <!-- Personal Info -->
             <fieldset class="border border-gray-700 p-4 rounded-lg">
-                <legend class="text-cyan-300 px-2">Personal Info</legend>
+                <legend class="neon text-lg text-cyan-400 px-2">Personal Info</legend>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <!-- Gender -->
                     <div>
-                        <label for="Gender" class="flex items-center text-gray-300 mb-1" title="Select gender: Male or Female.">Gender ℹ️</label>
+                        <label for="Gender" class="flex items-center text-gray-200 mb-1" title="Select gender: Male or Female.">Gender ℹ️</label>
                         <select id="Gender" name="Gender" required class="w-full p-2 rounded-lg bg-gray-800 text-gray-200">
                             <option value="1">Male</option>
                             <option value="0">Female</option>
                         </select>
                     </div>
+                    <!-- Age -->
                     <div>
-                        <label for="Age" class="flex items-center text-gray-300 mb-1" title="Enter your age in years, e.g., 35.">Age ℹ️</label>
+                        <label for="Age" class="flex items-center text-gray-200 mb-1" title="Enter your age in years, e.g., 35.">Age ℹ️</label>
                         <input id="Age" type="number" name="Age" placeholder="e.g., 35" min="0" required class="w-full p-2 rounded-lg bg-gray-800 text-gray-200"/>
                     </div>
-                    <div>
-                        <label for="Driving_License" class="flex items-center text-gray-300 mb-1" title="Do you have a driving license?">Driving License ℹ️</label>
+                    <!-- Driving License -->
+                    <div class="sm:col-span-2">
+                        <label for="Driving_License" class="flex items-center text-gray-200 mb-1" title="Do you have a driving license?">Driving License ℹ️</label>
                         <select id="Driving_License" name="Driving_License" required class="w-full p-2 rounded-lg bg-gray-800 text-gray-200">
                             <option value="1">Yes</option>
                             <option value="0">No</option>
@@ -81,21 +118,22 @@
 
             <!-- Vehicle Info -->
             <fieldset class="border border-gray-700 p-4 rounded-lg">
-                <legend class="text-cyan-300 px-2">Vehicle Info</legend>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <!-- Single category dropdown -->
-                    <div class="sm:col-span-2">
-                        <label for="Vehicle_Age_Category" class="flex items-center text-gray-300 mb-1" title="Select the vehicle age category.">Vehicle Age Category ℹ️</label>
+                <legend class="neon text-lg text-cyan-400 px-2">Vehicle Info</legend>
+                <div class="grid grid-cols-1 gap-4">
+                    <!-- Vehicle Age Category -->
+                    <div>
+                        <label for="Vehicle_Age_Category" class="flex items-center text-gray-200 mb-1" title="Select the vehicle age category.">Vehicle Age Category ℹ️</label>
                         <select id="Vehicle_Age_Category" name="Vehicle_Age_Category" required class="w-full p-2 rounded-lg bg-gray-800 text-gray-200">
                             <option value="lt1">Less than 1 year</option>
                             <option value="btw1and2">Between 1 and 2 years</option>
                             <option value="gt2">More than 2 years</option>
                         </select>
                     </div>
-                    <div class="sm:col-span-2">
-                        <label for="Vehicle_Damage_Yes" class="flex items-center text-gray-300 mb-1" title="Has the vehicle been previously damaged?">Vehicle Damage ℹ️</label>
+                    <!-- Vehicle Damage -->
+                    <div>
+                        <label for="Vehicle_Damage_Yes" class="flex items-center text-gray-200 mb-1" title="Has the vehicle been previously damaged?">Vehicle Damage ℹ️</label>
                         <select id="Vehicle_Damage_Yes" name="Vehicle_Damage_Yes" required class="w-full p-2 rounded-lg bg-gray-800 text-gray-200">
-                            <option value="1">Yes</option>
+                            <option value="#1">Yes</option>
                             <option value="0">No</option>
                         </select>
                     </div>
@@ -104,39 +142,44 @@
 
             <!-- Insurance Info -->
             <fieldset class="border border-gray-700 p-4 rounded-lg">
-                <legend class="text-cyan-300 px-2">Insurance Info</legend>
+                <legend class="neon text-lg text-cyan-400 px-2">Insurance Info</legend>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label for="Previously_Insured" class="flex items-center text-gray-300 mb-1" title="Have you ever been insured before?">Previously Insured ℹ️</label>
-                    <select id="Previously_Insured" name="Previously_Insured" required class="w-full p-2 rounded-lg bg-gray-800 text-gray-200">
-                      <option value="1">Yes</option>
-                      <option value="0">No</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label for="Region_Code" class="flex items-center text-gray-300 mb-1" title="Select your region code.">Region Code ℹ️</label>
-                    <select id="Region_Code" name="Region_Code" required class="w-full p-2 rounded-lg bg-gray-800 text-gray-200">
-                      {% for code in region_codes %}
-                        <option value="{{ code }}">{{ code }}</option>
-                      {% endfor %}
-                    </select>
-                  </div>
-                  <div>
-                    <label for="Policy_Sales_Channel" class="flex items-center text-gray-300 mb-1" title="Enter policy sales channel code.">Policy Channel ℹ️</label>
-                    <select id="Policy_Sales_Channel" name="Policy_Sales_Channel" required class="w-full p-2 rounded-lg bg-gray-800 text-gray-200">
-                      {% for channel in policy_channels %}
-                        <option value="{{ channel }}">{{ channel }}</option>
-                      {% endfor %}
-                    </select>
-                  </div>
-                  <div>
-                    <label for="Annual_Premium" class="flex items-center text-gray-300 mb-1" title="Annual premium in units, e.g., 35000.">Annual Premium ℹ️</label>
-                    <input id="Annual_Premium" type="number" name="Annual_Premium" placeholder="e.g., 35000" step="0.01" min="0" required class="w-full p-2 rounded-lg bg-gray-800 text-gray-200" />
-                  </div>
-                  <div>
-                    <label for="Vintage" class="flex items-center text-gray-300 mb-1" title="How many days since policy creation?">Vintage (days) ℹ️</label>
-                    <input id="Vintage" type="number" name="Vintage" placeholder="e.g., 100" min="0" required class="w-full p-2 rounded-lg bg-gray-800 text-gray-200" />
-                  </div>
+                    <!-- Previously Insured -->
+                    <div>
+                        <label for="Previously_Insured" class="flex items-center text-gray-200 mb-1" title="Have you ever been insured before?">Previously Insured ℹ️</label>
+                        <select id="Previously_Insured" name="Previously_Insured" required class="w-full p-2 rounded-lg bg-gray-800 text-gray-200">
+                            <option value="1">Yes</option>
+                            <option value="0">No</option>
+                        </select>
+                    </div>
+                    <!-- Region Code -->
+                    <div>
+                        <label for="Region_Code" class="flex items-center text-gray-200 mb-1" title="Select your region code.">Region Code ℹ️</label>
+                        <select id="Region_Code" name="Region_Code" required class="w-full p-2 rounded-lg bg-gray-800 text-gray-200">
+                            {% for code in region_codes %}
+                                <option value="{{ code }}">{{ code }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <!-- Policy Channel -->
+                    <div>
+                        <label for="Policy_Sales_Channel" class="flex items-center text-gray-200 mb-1" title="Enter policy sales channel code.">Policy Channel ℹ️</label>
+                        <select id="Policy_Sales_CHANNEL" name="Policy_Sales_Channel" required class="w-full p-2 rounded-lg bg-gray-800 text-gray-200">
+                            {% for channel in policy_channels %}
+                                <option value="{{ channel }}">{{ channel }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <!-- Annual Premium -->
+                    <div>
+                        <label for="Annual_Premium" class="flex items-center text-gray-200 mb-1" title="Annual premium in units, e.g., 35000.">Annual Premium ℹ️</label>
+                        <input id="Annual_Premium" type="number" name="Annual_Premium" placeholder="e.g., 35000" step="0.01" min="0" required class="w-full p-2 rounded-lg bg-gray-800 text-gray-200" />
+                    </div>
+                    <!-- Vintage -->
+                    <div>
+                        <label for="Vintage" class="flex items-center text-gray-200 mb-1" title="How many days since policy creation?">Vintage (days) ℹ️</label>
+                        <input id="Vintage" type="number" name="Vintage" placeholder="e.g., 100" min="0" required class="w-full p-2 rounded-lg bg-gray-800 text-gray-200" />
+                    </div>
                 </div>
             </fieldset>
 

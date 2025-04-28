@@ -4,12 +4,12 @@ resource "aws_dynamodb_table" "terraform_locks" {
 
 
   attribute {
-    name = "LockID"
+    name = var.aws_dynamodb_table_hash_key
     type = "S"
   }
 
 
-  hash_key = "LockID"
+  hash_key = var.aws_dynamodb_table_hash_key
 
 
   point_in_time_recovery {

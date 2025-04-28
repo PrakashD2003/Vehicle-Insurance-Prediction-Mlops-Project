@@ -1,0 +1,64 @@
+# Python bytecode and caches
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual‐envs and Conda envs
+.env
+.venv/
+env/
+venv/
+ENV/
+
+# Local data, artifacts & logs
+artifact/
+logs/
+notebooks/
+infrastructure/
+
+# CI/CD workflows
+.github/
+
+
+
+# IDE/editor state
+.vscode/
+.idea/
+
+# Git metadata
+.git/
+.gitignore
+
+# Docker files (already in context, no need to copy)
+Dockerfile
+.dockerignore
+
+# Build metadata
+*.egg-info/
+build/
+dist/
+src.egg-info
+
+# System files
+.DS_Store
+*.swp
+
+# Any local config/secrets
+.env.local
+
+# Miscellaneous docs you don’t need in the container
+projectflow.txt
+CrashCourse.txt
+README.md
+LICENSE
+template.py
+demo.py
+
+
+.pytest_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+__pypackages__/
+
