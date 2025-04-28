@@ -3,6 +3,13 @@ from datetime import date
 from src.Constants.global_logging import LOG_SESSION_TIME
 
 """
+AWS Credentials--
+"""
+AWS_ACCESS_KEY_ID: str = "AWS_ACCESS_KEY_ID"
+AWS_SECRET_ACCESS_KEY: str = "AWS_SECRET_ACCESS_KEY"
+AWS_REGION: str = "ap-south-1" 
+
+"""
  MongoDB Connection Variables
 """
 DATABASE_NAME = "Vehicle-Insurance-Proj"                  # Name of the database
@@ -12,7 +19,7 @@ MONGODB_CONNECTION_URL =  "MONGODB_CONNECTION_URL" # Connection string to MongoD
 """
  Pipeline Variables
 """ 
-PIPELINE_NAME: str = ""
+PIPELINE_NAME: str = "vehicle_insurance_pipeline"
 ARTIFACT_DIR: str = "artifact"
 
 MODEL_FILE_NAME = "model.pkl"
@@ -71,12 +78,6 @@ MIN_SAMPLES_SPLIT_MAX_DEPTH: int = 10
 MIN_SAMPLES_SPLIT_CRITERION: str = 'entropy'
 MIN_SAMPLES_SPLIT_RANDOM_STATE: int = 101
 
-"""
-AWS Credentials--
-"""
-AWS_ACCESS_KEY_ID: str = "AWS_ACCESS_KEY_ID"
-AWS_SECRET_ACCESS_KEY: str = "AWS_SECRET_ACCESS_KEY"
-AWS_REGION: str = "ap-south-1" 
 
 """
 MODEL Evaluation related constants
@@ -90,10 +91,11 @@ MODEL PUSHER relates constant
 """
 LOCAL_ARTIFACTS_PATH: str = os.path.join("artifact", LOG_SESSION_TIME)
 LOCAL_LOGS_PATH: str = os.path.join("logs", LOG_SESSION_TIME)
-
+LOCAL_CATEGORIES_JSON_PATH: str = os.path.join("artifact", DATA_TRANSFORMATOIN_DUMP_CATEGORIES_FILE_NAME)
 # S3 prefixes (always use forward slashes)
 S3_ARTIFACTS_PREFIX = f"artifacts/{LOG_SESSION_TIME}/"
 S3_LOGS_PREFIX = f"logs/{LOG_SESSION_TIME}/"
+S3_CATEGORIES_JSON_PREFIX = f"artifacts/{DATA_TRANSFORMATOIN_DUMP_CATEGORIES_FILE_NAME}"
 
 
 

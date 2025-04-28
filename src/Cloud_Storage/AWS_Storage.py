@@ -1,6 +1,7 @@
 import sys
 import boto3
 import os
+import json
 import pickle
 import tempfile
 from pandas import DataFrame, read_csv
@@ -279,7 +280,7 @@ class SimpleStorageService:
                 os.remove(from_filename)
                 self.logger.info(f"Removed local file {from_filename} after upload")
         except Exception as e:
-            raise MyException(error_message=e, error_detail=traceback.format_exc(), logger=self.logger) from e
+            raise MyException(error_message=e, error_detail=e.__traceback__, logger=self.logger) from e
     
     import os
 
@@ -379,3 +380,57 @@ class SimpleStorageService:
             return df
         except Exception as e:
             raise MyException(error_message=e, error_detail=traceback.format_exc(), logger=self.logger) from e
+    
+    def load_categories(self, local_file_path: str, s3_file_key: str, bucket_name: str,*,aws_profile: Optional[str] = None,) -> dict:
+        """
+        Load categories from a local JSON file if it exists; otherwise fetch from S3.
+        
+        :param local_file_path: Path on disk to look for the JSON file.
+        :param s3_file_key: Key of the JSON object in the S3 bucket.
+        :param bucket_name: Name of the S3 bucket.
+        :param aws_profile: (Optional) Name of the AWS profile to use for the S3 call.
+        :returns: The JSON data, parsed into a dict.
+        :raises MyException: if neither local nor S3 load succeeds.
+        """
+        try:
+
+            # 1) Try local
+            if os.path.exists(local_file_path):
+                with open(local_file_path, "r", encoding="utf-8") as f:
+                    return json.load(f)
+
+            # 2) Fallback to S3
+            elif(self.check_s3_key_path_available(bucket_name=bucket_name, s3_key=s3_file_key)):
+                self.logger.debug(f"Fetching specified file(object) i.e. {s3_file_key} from {bucket_name} bucket...")
+                obj_bytes = self.get_file_object(filename=s3_file_key, bucket_name=bucket_name)
+                obj_bytes = self.read_s3_object(s3_object=obj_bytes,decode=False)
+                # If get_file_object returns raw bytes or a file-like, we need to parse JSON:
+                if isinstance(obj_bytes, (bytes, bytearray)):
+                    data = json.loads(obj_bytes.decode("utf-8"))
+                elif hasattr(obj_bytes, "read"):
+                    data = json.load(obj_bytes)
+                elif isinstance(obj_bytes, dict):
+                    # Already parsed?
+                    data = obj_bytes
+                else:
+                    raise TypeError(f"Unexpected type from S3 client: {type(obj_bytes)}")
+
+                # 3) (Optional) cache locally for next time
+                os.makedirs(os.path.dirname(local_file_path), exist_ok=True)
+                with open(local_file_path, "w", encoding="utf-8") as f:
+                    json.dump(data, f, indent=2)
+
+                return data
+            else:
+                raise MyException(error_message=f"Neither local file {local_file_path} nor S3 key {s3_file_key} found in bucket {bucket_name}.", error_detail=sys, logger=self.logger)
+
+        except Exception as e:
+            # Include the traceback, not the whole sys module
+            self.logger.error("Failed to load categories", exc_info=True)
+            raise MyException(
+                error_message=f"Error loading categories from {bucket_name}/{s3_file_key}: {e}",
+                error_detail=e.__traceback__,
+                logger=self.logger)
+
+
+    

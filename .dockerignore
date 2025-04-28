@@ -15,6 +15,7 @@ artifact/
 logs/
 notebooks/
 infrastructure/
+secrets/
 
 # CI/CD workflows
 .github/
@@ -53,6 +54,7 @@ README.md
 LICENSE
 template.py
 demo.py
+
 
 
 .pytest_cache/

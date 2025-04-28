@@ -17,3 +17,5 @@ scikit_learn==1.6.1
 setuptools==75.8.0
 starlette==0.46.2
 uvicorn==0.34.2
+jinja2>=3.1.0
+python-multipart>=0.0.6

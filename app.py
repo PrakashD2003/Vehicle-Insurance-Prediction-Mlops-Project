@@ -1,4 +1,3 @@
-import json
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
@@ -6,21 +5,24 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.responses import HTMLResponse, RedirectResponse
 from uvicorn import run as app_run
+from src.Cloud_Storage.AWS_Storage import SimpleStorageService
 
 
 from typing import Optional
 
 # Importing Constants and pipeline modules from project 
+from src.Logger import configure_logger
 from src.Constants import APP_HOST, APP_PORT
 from src.Pipeline.Prediction_Pipeline import VehicleData, VehicleDataClassifier
 from src.Pipeline.Training_Pipeline import TrainPipeline
-from src.Entity.Config_Entity import DataTransformationConfig
+from src.Entity.Config_Entity import ModelPusherConfig
 
-try:
-    with open(DataTransformationConfig.data_transformation_dump_categories_path) as f:
-        cats = json.load(f)
-except FileNotFoundError:
-    raise RuntimeError("categories.json not found—run `TrainPipeline` first")
+# Configure logging
+logger = configure_logger(logger_name=__name__, level="DEBUG", to_console=True, to_file=True, log_file_name=__name__)
+
+# Load the categories from the JSON file
+s3 = SimpleStorageService(logger=logger)
+cats = s3.load_categories(local_file_path=ModelPusherConfig.local_categories_json_path,s3_file_key=ModelPusherConfig.s3_categories_json_prefix, bucket_name=ModelPusherConfig.bucket_name)
 
 
 REGION_CODES    = cats["region_codes"]

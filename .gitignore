@@ -28,6 +28,7 @@ artifact/
 logs/
 CrashCourse.txt
 notebooks/
+secrets/
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

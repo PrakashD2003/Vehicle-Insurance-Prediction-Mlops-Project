@@ -17,6 +17,7 @@ class DataTransformationArtifact:
     data_transformation_transformed_object_file_path:str 
     data_transformation_transformed_train_file_path:str
     data_transformation_transformed_test_file_path:str
+    data_transformation_categories_json_path:str
 
 @dataclass
 class ClassificationMetricArtifact:

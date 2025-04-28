@@ -3,7 +3,7 @@ import sys
 from src.Cloud_Storage.AWS_Storage import SimpleStorageService
 from src.Exception import MyException
 from src.Logger import configure_logger
-from src.Entity.Artifact_Entity import ModelPusherArtifact, ModelEvaluationArtifact
+from src.Entity.Artifact_Entity import ModelPusherArtifact, ModelEvaluationArtifact, DataTransformationArtifact
 from src.Entity.Config_Entity import ModelPusherConfig
 from src.Entity.S3_Estimator import Current_S3_Vehicle_Insurance_Estimator
 from src.Cloud_Storage.AWS_Storage import SimpleStorageService
@@ -47,6 +47,9 @@ class ModelPusher:
             self.s3.upload_folder_to_s3(local_folder_path=self.model_pusher_config.local_logs_path,
                                         s3_folder_prefix=self.model_pusher_config.s3_logs_prefix,
                                         bucket_name=self.model_pusher_config.bucket_name)
+            self.s3.upload_file_to_s3(from_filename=self.model_pusher_config.local_categories_json_path,
+                                      to_filename=self.model_pusher_config.s3_categories_json_prefix,
+                                      bucket_name=self.model_pusher_config.bucket_name)
             logger.info("Artifacts and Logs are uploaded to S3 bucket Successfully.")
             logger.debug("Uploading new model to S3 bucket....")
             self.Current_S3_Vehicle_Insurance_Estimator.save_model_to_s3(local_model_file_path=self.model_evaluation_artifact.trained_model_path)

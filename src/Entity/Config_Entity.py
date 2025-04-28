@@ -65,8 +65,10 @@ class ModelPusherConfig:
     s3_model_key_path: str = f"{MODEL_S3_PRIFIX_KEY.rstrip('/')}/{MODEL_FILE_NAME}"
     local_artifact_path: str = LOCAL_ARTIFACTS_PATH
     local_logs_path: str = LOCAL_LOGS_PATH
-    s3_artifact_prefix = S3_ARTIFACTS_PREFIX
-    s3_logs_prefix = S3_LOGS_PREFIX
+    local_categories_json_path: str =LOCAL_CATEGORIES_JSON_PATH
+    s3_artifact_prefix: str = S3_ARTIFACTS_PREFIX
+    s3_logs_prefix: str = S3_LOGS_PREFIX
+    s3_categories_json_prefix: str = S3_CATEGORIES_JSON_PREFIX
 
 @dataclass
 class VehiclePredictorConfig:

@@ -250,7 +250,7 @@ class DataTransformation:
             test_data = read_csv_data(self.data_ingestion_artifact.test_data_file_path,logger=logger)
             logger.info("Data Successfully Loaded.")
            
-            _dump_categories(train_data, save_file_path=self.data_transformation_config.data_transformation_dump_categories_path) 
+            _dump_categories(train_data, save_file_path=self.data_transformation_config.data_transformation_dump_categories_path,logger=logger) 
             
             logger.debug("Spliting input features and target feature from dataset...")
             train_input_features = train_data.drop(columns=self._schema_config['target_columns'])
@@ -311,7 +311,8 @@ class DataTransformation:
             return DataTransformationArtifact(
                 data_transformation_transformed_object_file_path = self.data_transformation_config.data_transformation_transformed_object_file_path,
                 data_transformation_transformed_train_file_path = self.data_transformation_config.data_transformation_transformed_train_file_path,
-                data_transformation_transformed_test_file_path = self.data_transformation_config.data_transformation_transformed_test_file_path 
+                data_transformation_transformed_test_file_path = self.data_transformation_config.data_transformation_transformed_test_file_path,
+                data_transformation_categories_json_path= self.data_transformation_config.data_transformation_dump_categories_path 
             )
         except Exception as e:
             raise MyException(error_message=e, error_detail=sys, logger=logger) from e
