@@ -12,6 +12,7 @@ permissions:
 
 jobs:
   Continuous_Integration:
+    
     name: Build and Push Docker Image to ECR
     runs-on: ubuntu-latest
     steps:
@@ -21,6 +22,11 @@ jobs:
       # ────────────────────────────────────────────────────────
       # 1) Configure AWS via OIDC (no long-lived keys needed)
       # ────────────────────────────────────────────────────────
+      - name: Reveal runner
+        run: |
+          echo "Runner name: $RUNNER_NAME"
+          echo "Labels: $RUNNER_LABELS"
+
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
