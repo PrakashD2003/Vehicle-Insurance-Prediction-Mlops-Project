@@ -14,7 +14,7 @@ jobs:
   Continuous_Integration:
     
     name: Build and Push Docker Image to ECR
-    runs-on: [self-hosted,Linux,X64]
+    runs-on: self-hosted
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
@@ -63,7 +63,7 @@ jobs:
   Continuous_Deployment:
     name: Deploy to EC2 via Self-Hosted Runner
     needs: Continuous_Integration
-    runs-on: [self-hosted,Linux,X64]
+    runs-on: self-hosted
     env:
       AWS_DEFAULT_REGION:    ${{ secrets.AWS_DEFAULT_REGION }}
       ECR_REGISTRY:          ${{ secrets.ECR_REGISTRY }}
