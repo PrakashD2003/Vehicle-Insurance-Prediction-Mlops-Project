@@ -1,0 +1,91 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  Continuous_Integration:
+    name: Build and Push Docker Image to ECR
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      # ────────────────────────────────────────────────────────
+      # 1) Configure AWS via OIDC (no long-lived keys needed)
+      # ────────────────────────────────────────────────────────
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-region:     ap-south-1
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          role-session-name: github-actions
+        # Note: You DO NOT need aws-access-key-id / aws-secret-access-key
+        # when you have role-to-assume + OIDC set up.
+
+      # ────────────────────────────────────────────────────────
+      # 2) Log in to ECR
+      # ────────────────────────────────────────────────────────
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v1
+
+      # ────────────────────────────────────────────────────────
+      # 3) Build & Push
+      # ────────────────────────────────────────────────────────
+      - name: Build, tag, and push image
+        env:
+          ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
+          IMAGE_NAME:   vehicle-insurance-app
+        run: |
+          IMAGE_TAG=${{ github.sha }}
+          docker build \
+            -t $ECR_REGISTRY/$IMAGE_NAME:latest \
+            -t $ECR_REGISTRY/$IMAGE_NAME:$IMAGE_TAG .
+          docker push $ECR_REGISTRY/$IMAGE_NAME:latest
+          docker push $ECR_REGISTRY/$IMAGE_NAME:$IMAGE_TAG
+
+  Continuous_Deployment:
+    name: Deploy to EC2 via Self-Hosted Runner
+    needs: Continuous_Integration
+    runs-on: [ self-hosted, linux, ec2, Vehicle-insurance-self-hosted-runner ]
+    env:
+      AWS_DEFAULT_REGION:    ${{ secrets.AWS_DEFAULT_REGION }}
+      ECR_REGISTRY:          ${{ secrets.ECR_REGISTRY }}
+      IMAGE_NAME:            vehicle-insurance-app
+      MONGODB_URL:           ${{ secrets.MONGODB_URL }}
+      MONGODB_DATABASE_NAME: ${{ secrets.MONGODB_DATABASE_NAME }}
+      MONGODB_COLLECTION_NAME: ${{ secrets.MONGODB_COLLECTION_NAME }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # ────────────────────────────────────────────────────────
+      # EC2 already has an IAM Instance Profile attached,
+      # so no credential setup is needed here.
+      # ────────────────────────────────────────────────────────
+
+      - name: Log in to ECR
+        run: |
+          aws ecr get-login-password \
+            --region $AWS_DEFAULT_REGION \
+          | docker login \
+              --username AWS \
+              --password-stdin $ECR_REGISTRY
+
+      - name: Pull & run latest image
+        run: |
+          docker pull $ECR_REGISTRY/$IMAGE_NAME:latest
+          docker rm -f vehicle-insurance-app || true
+          docker run -d \
+            --name vehicle-insurance-app \
+            -p 5000:5000 \
+            -e DATABASE_NAME="$MONGODB_DATABASE_NAME" \
+            -e COLLECTION_NAME="$MONGODB_COLLECTION_NAME" \
+            -e MONGODB_URL="$MONGODB_URL" \
+            $ECR_REGISTRY/$IMAGE_NAME:latest
+
+      - name: Verify container is running
+        run: docker ps --filter name=vehicle-insurance-app

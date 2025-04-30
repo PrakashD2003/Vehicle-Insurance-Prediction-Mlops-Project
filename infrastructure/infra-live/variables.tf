@@ -83,6 +83,60 @@ variable "s3_tags" {
 
 
 
+### Security Group Configuration ###
+variable "sg_name" {
+  description = "Name for the SG"
+  type        = string
+}
+variable "sg_description" {
+  description = "SG description"
+  type        = string
+  default     = "managed by Terraform"
+}
+variable "vpc_id" {
+  description = "ID of the VPC to attach SG to"
+  type        = string
+  default     = ""
+}
+
+# simple 1-rule example; you can expand this to lists of maps
+variable "ingress_rules" {
+  type = list(object({
+    from_port   = number
+    to_port     = number
+    protocol    = string
+    cidr_blocks = list(string)
+  }))
+}
+
+variable "egress_rules" {
+  type = list(object({
+    from_port   = number
+    to_port     = number
+    protocol    = string
+    cidr_blocks = list(string)
+  }))
+  default = [
+    { from_port = 0, to_port = 0, protocol = "-1", cidr_blocks = ["0.0.0.0/0"] }
+  ]
+}
+
+variable "sg_tags" {
+  description = "Additional tags"
+  type        = map(string)
+  default     = {}
+}
+
+variable "sg_output_file" {
+  description = "Path to write out resource metadata for CI/CD"
+  type        = string
+  default     = "./outputs/sg_info.json"
+}
+
+
+
+
+
 ### EC2 Instance Configuration ###
 variable "ami_id" {
   description = "AMI ID for the EC2 instance"
@@ -127,43 +181,61 @@ variable "ec2_output_file" {
   default     = "./outputs/ecr_info.json"
 }
 
-
-
-### Security Group Configuration ###
-variable "sg_name" {
-  description = "Name for the SG"
+variable "iam_instance_profile" {
+  description = "Name of the IAM Instance Profile to attach to this EC2 (optional)"
   type        = string
-}
-variable "sg_description" {
-  description = "SG description"
-  type        = string
-  default     = "managed by Terraform"
-}
-variable "vpc_id" {
-  description = "ID of the VPC to attach SG to"
-  type        = string
-  default     = ""
-}
-
-# simple 1-rule example; you can expand this to lists of maps
-variable "ingress_rules" {
-  type = list(object({
-    from_port   = number
-    to_port     = number
-    protocol    = string
-    cidr_blocks = list(string)
-  }))
+  default     = null
 }
 
 
-variable "sg_tags" {
-  description = "Additional tags"
+
+
+
+### IAM ROLE CONFIGURATION ###
+# variable "role_name" {
+#   description = "Name of the IAM role to create"
+#   type        = string
+# }
+
+# variable "assume_role_policy" {
+#   description = "The JSON policy that grants an entity permission to assume the role"
+#   type        = string
+# }
+
+variable "managed_policy_arns" {
+  description = "List of IAM managed policy ARNs to attach to the role"
+  type        = list(string)
+  default     = []
+}
+
+variable "inline_policies" {
+  description = <<EOF
+Map of inline policies to attach.  
+Key   = policy name  
+Value = JSON policy document  
+EOF
   type        = map(string)
   default     = {}
 }
 
-variable "sg_output_file" {
-  description = "Path to write out resource metadata for CI/CD"
+variable "iam_role_tags" {
+  description = "Tags to apply to the IAM role"
+  type        = map(string)
+  default     = {}
+}
+
+variable "iam_role_output_file" {
+  description = "If non-null, write this role’s metadata (name, id, arn, tags) to this JSON file"
   type        = string
-  default     = "./outputs/sg_info.json"
+  default     = null
+}
+
+variable "github_owner" {
+  description = "GitHub owner or organization name for the CI OIDC trust policy"
+  type        = string
+}
+
+variable "github_repo" {
+  description = "GitHub repository name for the CI OIDC trust policy"
+  type        = string
 }

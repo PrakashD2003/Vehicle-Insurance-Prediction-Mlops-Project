@@ -51,7 +51,7 @@ class DataIngestion:
         """
         try:
             data = Vehicle_Insurance_Data(logger=logger)
-            dataframe = data.import_collection_as_dataframe(collection_name=self.data_ingestion_config.collection_name,database_name=self.data_ingestion_config.database_name)
+            dataframe = data.import_collection_as_dataframe(collection_name=os.getenv(COLLECTION_NAME),database_name=os.getenv(DATABASE_NAME))
             
             feature_store_file_path = self.data_ingestion_config.feature_store_file_path
             dir_path = os.path.dirname(feature_store_file_path)

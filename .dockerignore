@@ -16,6 +16,7 @@ logs/
 notebooks/
 infrastructure/
 secrets/
+ansible-automation/
 
 # CI/CD workflows
 .github/

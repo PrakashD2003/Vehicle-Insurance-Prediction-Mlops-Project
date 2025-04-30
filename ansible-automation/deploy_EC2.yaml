@@ -1,0 +1,142 @@
+---
+- name: Prepare EC2 for self-hosted GitHub Actions
+  hosts: ec2
+  become: yes
+
+  vars:
+    # pulled from [ec2:vars] in your inventory
+    runner_user:    "actions-runner"
+    runner_group:   "actions-runner"
+    runner_name:    "{{ ansible_hostname }}-runner"
+    runner_version: "2.299.0"
+    runner_dir:     "/opt/actions-runner"
+
+  tasks:
+    # ────────────────────────────────────────────────────────────────
+    # 1) System packages
+    # ────────────────────────────────────────────────────────────────
+    - name: Refresh apt cache
+      apt:
+        update_cache: yes
+
+    - name: Install prerequisite packages
+      apt:
+        name:
+          - curl
+          - git
+          - jq
+          - zlib1g
+          - libicu70
+          - krb5-user
+          - docker.io
+          - awscli
+          - acl
+        state: present
+
+    # ────────────────────────────────────────────────────────────────
+    # 2) Runner user & group
+    # ────────────────────────────────────────────────────────────────
+    - name: Ensure runner group exists
+      group:
+        name: "{{ runner_group }}"
+        state: present
+
+    - name: Create dedicated user for the runner
+      user:
+        name:        "{{ runner_user }}"
+        group:       "{{ runner_group }}"
+        shell:       /bin/bash
+        createhome:  yes
+
+    # ────────────────────────────────────────────────────────────────
+    # 3) Runner directory
+    # ────────────────────────────────────────────────────────────────
+    - name: Create runner directory
+      file:
+        path:  "{{ runner_dir }}"
+        state: directory
+        owner: "{{ runner_user }}"
+        group: "{{ runner_group }}"
+        mode:  '0755'
+
+    # ────────────────────────────────────────────────────────────────
+    # 4) Download & unpack the runner
+    # ────────────────────────────────────────────────────────────────
+    - name: Download GitHub Actions runner package
+      become_user: "{{ runner_user }}"
+      get_url:
+        url:  "https://github.com/actions/runner/releases/download/v{{ runner_version }}/actions-runner-linux-x64-{{ runner_version }}.tar.gz"
+        dest: "{{ runner_dir }}/actions-runner.tar.gz"
+        mode: '0644'
+
+    - name: Extract runner package
+      become_user: "{{ runner_user }}"
+      unarchive:
+        src:        "{{ runner_dir }}/actions-runner.tar.gz"
+        dest:       "{{ runner_dir }}"
+        remote_src: yes
+
+    
+    # ────────────────────────────────────────────────────────────────
+    # 5) Get the registration token from GitHub
+    # ────────────────────────────────────────────────────────────────
+    - name: Debug GitHub repo & PAT values
+      debug:
+        msg:
+          - "Repo = {{ github_repo }}"
+          - "PAT  = {{ runner_token }}"
+
+    - name: Fetch registration token from GitHub API
+      uri:
+        url: "https://api.github.com/repos/{{ github_repo }}/actions/runners/registration-token"
+        method: POST
+        headers:
+          Authorization: "token {{ runner_token }}"
+          Accept:        "application/vnd.github.v3+json"
+        return_content: yes
+        status_code: 201
+      register: reg_token_response
+
+    - name: Show raw registration-token response
+      debug:
+        var: reg_token_response
+
+    - name: Set runner registration token fact
+      set_fact:
+        runner_registration_token: "{{ reg_token_response.json.token }}"
+
+    # ────────────────────────────────────────────────────────────────
+    # 6) Configure & install the service
+    # ────────────────────────────────────────────────────────────────
+    - name: Configure the GitHub Actions runner
+      shell: |
+        cd {{ runner_dir }}
+        sudo -u {{ runner_user }} bash config.sh --unattended \
+          --url https://github.com/{{ github_repo }} \
+          --token {{ runner_registration_token }} \
+          --name {{ runner_name }} \
+          --labels self-hosted,Linux,x64 \
+          --work _work
+      args:
+        creates: "{{ runner_dir }}/.runner"
+
+    - name: Install the runner service
+      shell: ./svc.sh install
+      args:
+        chdir: "{{ runner_dir }}"
+    
+    - name: Start the runner service
+      shell: ./svc.sh start
+      args:
+        chdir: "{{ runner_dir }}"
+
+      
+
+    # ────────────────────────────────────────────────────────────────
+    # 7) Docker daemon
+    # ────────────────────────────────────────────────────────────────
+    - name: Enable and start Docker service
+      service:
+        name:    docker
+        state:   started
+        enabled: yes

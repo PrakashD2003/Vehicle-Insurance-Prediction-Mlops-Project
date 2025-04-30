@@ -12,8 +12,8 @@ AWS_REGION: str = "ap-south-1"
 """
  MongoDB Connection Variables
 """
-DATABASE_NAME = "Vehicle-Insurance-Proj"                  # Name of the database
-COLLECTION_NAME = "Vehicle-Insurance-Proj-Data"     # Name of the collection/table
+DATABASE_NAME = "DATABASE_NAME"                  # Name of the database
+COLLECTION_NAME = "COLLECTION_NAME"     # Name of the collection/table
 MONGODB_CONNECTION_URL =  "MONGODB_CONNECTION_URL" # Connection string to MongoDB server (change if you're using MongoDB Atlas)
 
 """
@@ -43,7 +43,6 @@ SCHEMA_FILE_PATH = os.path.join("config", "schema.yaml")
 """
 Data Ingestion related constant start with DATA_INGESTION VAR NAME
 """
-DATA_INGESTION_COLLECTION_NAME: str = "Vehicle-Insurance-Proj-Data"
 DATA_INGESTION_DIR_NAME: str = "data_ingestion"
 DATA_INGESTION_FEATURE_STORE_DIR: str = "feature_store"
 DATA_INGESTION_INGESTED_DIR: str = "ingested"

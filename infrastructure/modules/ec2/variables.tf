@@ -35,9 +35,16 @@ variable "ec2_tags" {
   default     = {}
 }
 
+variable "iam_instance_profile" {
+  description = "Name of the IAM Instance Profile to attach to this EC2 (optional)"
+  type        = string
+  default     = null
+}
+
 # where to write the output file
 variable "ec2_output_file" {
   description = "Path to write out resource metadata for CI/CD"
   type        = string
   default     = "./outputs/ecr_info.json"
 }
+

@@ -20,8 +20,8 @@ class DataIngestionConfig:
     training_data_file_path: str = os.path.join(data_ingestion_dir, DATA_INGESTION_INGESTED_DIR, TRAIN_FILE_NAME)
     test_data_file_path: str = os.path.join(data_ingestion_dir, DATA_INGESTION_INGESTED_DIR, TEST_FILE_NAME)
     test_data_size: float = DATA_INGESTION_TEST_DATA_SIZE
-    collection_name:str = DATA_INGESTION_COLLECTION_NAME
-    database_name:str = DATABASE_NAME
+    collection_name:str = os.getenv(COLLECTION_NAME)
+    database_name:str = os.getenv(DATABASE_NAME)
     random_state:int = RANDOM_STATE
 
 @dataclass

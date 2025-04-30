@@ -29,6 +29,7 @@ logs/
 CrashCourse.txt
 notebooks/
 secrets/
+ansible-automation\inventory.ini
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

@@ -33,7 +33,7 @@ class Vehicle_Insurance_Data:
                                         log_file_name=__name__
                                         )
         try:
-            self.mongo_client = MongoDBClient(database_name=DATABASE_NAME,logger=self.logger)
+            self.mongo_client = MongoDBClient(database_name=os.getenv(DATABASE_NAME),logger=self.logger)
         except Exception as e:
             raise MyException(error_message=e, error_detail=sys, logger=self.logger)
 
