@@ -4,6 +4,11 @@ on:
   push:
     branches:
       - main
+  
+permissions:
+  id-token: write      # ← allow the workflow to mint an OIDC token
+  contents: read       # ← allow checkout@v3 to pull your code (you still need this)
+
 
 jobs:
   Continuous_Integration:
@@ -24,6 +29,9 @@ jobs:
           role-session-name: github-actions
         # Note: You DO NOT need aws-access-key-id / aws-secret-access-key
         # when you have role-to-assume + OIDC set up.
+      
+      - name: Who am I?
+        run: aws sts get-caller-identity
 
       # ────────────────────────────────────────────────────────
       # 2) Log in to ECR
