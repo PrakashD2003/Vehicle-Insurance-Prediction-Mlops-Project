@@ -76,6 +76,44 @@
         dest:       "{{ runner_dir }}"
         remote_src: yes
 
+        # ────────────────────────────────────────────────────────────────
+    # 4) Download & unpack the runner
+    # ────────────────────────────────────────────────────────────────
+    - name: Extract runner package
+      become_user: "{{ runner_user }}"
+      unarchive:
+        src:        "{{ runner_dir }}/actions-runner.tar.gz"
+        dest:       "{{ runner_dir }}"
+        remote_src: yes
+
+    # ────────────────────────────────────────────────────────────────
+    # 4.1) Ensure runner can write logs & update itself
+    # ────────────────────────────────────────────────────────────────
+    - name: Create runner _diag directory
+      file:
+        path: "{{ runner_dir }}/_diag"
+        state: directory
+        owner: "{{ runner_user }}"
+        group: "{{ runner_group }}"
+        mode: '0755'
+
+    - name: Create runner _work directory
+      file:
+        path: "{{ runner_dir }}/_work"
+        state: directory
+        owner: "{{ runner_user }}"
+        group: "{{ runner_group }}"
+        mode: '0755'
+
+    - name: Fix ownership & permissions on entire runner install
+      file:
+        path: "{{ runner_dir }}"
+        recurse: yes
+        owner: "{{ runner_user }}"
+        group: "{{ runner_group }}"
+        mode: '0755'
+
+
     
     # ────────────────────────────────────────────────────────────────
     # 5) Get the registration token from GitHub
@@ -124,11 +162,14 @@
       shell: ./svc.sh install
       args:
         chdir: "{{ runner_dir }}"
+        creates: "/etc/systemd/system/actions.runner.{{ github_repo | replace('/', '-') }}.{{ runner_name }}.service"
+
     
-    - name: Start the runner service
-      shell: ./svc.sh start
-      args:
-        chdir: "{{ runner_dir }}"
+    - name: Ensure the runner service is started & enabled
+      service:
+        name: actions.runner.{{ github_repo | replace('/', '-') }}.{{ runner_name }}
+        state: started
+        enabled: yes
 
       
 
