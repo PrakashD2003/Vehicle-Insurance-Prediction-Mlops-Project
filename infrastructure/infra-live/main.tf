@@ -32,7 +32,7 @@ module "security_group" {
   sg_tags        = var.sg_tags
 }
 
-resource "aws_iam_openid_connect_provider" "github_oicd" {
+resource "aws_iam_openid_connect_provider" "github_oidc" {
   url = "https://token.actions.githubusercontent.com"
 
   client_id_list = ["sts.amazonaws.com"]
@@ -47,21 +47,30 @@ resource "aws_iam_openid_connect_provider" "github_oicd" {
 
 data "aws_iam_policy_document" "ci_assume" {
   statement {
-    effect  = "Allow"
-    actions = ["sts:AssumeRoleWithWebIdentity"]
-    # use the resource you just declared:
+    effect    = "Allow"
+    actions   = ["sts:AssumeRoleWithWebIdentity"]
+
     principals {
       type        = "Federated"
-      identifiers = [aws_iam_openid_connect_provider.github_oicd.arn]
+      identifiers = [aws_iam_openid_connect_provider.github_oidc.arn]
     }
 
+    # Exact match on the audience
     condition {
-      test     = "StringLike"
+      test     = "StringEquals"
+      variable = "token.actions.githubusercontent.com:aud"
+      values   = ["sts.amazonaws.com"]
+    }
+
+    # Exact match on the GitHub repo:branch
+    condition {
+      test     = "StringEquals"
       variable = "token.actions.githubusercontent.com:sub"
-      values   = ["repo/${var.github_owner}/${var.github_repo}:ref:refs/heads/main"]
+      values   = ["repo:${var.github_owner}/${var.github_repo}:ref:refs/heads/main"]
     }
   }
 }
+
 
 data "aws_iam_policy_document" "ec2_assume" {
   statement {
