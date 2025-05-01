@@ -19,6 +19,13 @@
         state: restarted
 
   tasks:
+    - name: Prune Docker system
+      shell: docker system prune -a --volumes --force
+
+    - name: Clean up runner diagnostic logs
+      file:
+        path: "{{ runner_dir }}/_diag/*.log"
+        state: absent
     # A) Stop & remove any existing systemd service
     - name: Stop old runner service
       service:
