@@ -4,15 +4,14 @@ on:
   push:
     branches:
       - main
-  
+
 permissions:
   id-token: write      # ← allow the workflow to mint an OIDC token
   contents: read       # ← allow checkout@v3 to pull your code (you still need this)
 
-
 jobs:
   Continuous_Integration:
-    
+
     name: Build and Push Docker Image to ECR
     runs-on: self-hosted
     steps:
@@ -35,7 +34,7 @@ jobs:
           role-session-name: github-actions
         # Note: You DO NOT need aws-access-key-id / aws-secret-access-key
         # when you have role-to-assume + OIDC set up.
-      
+
       - name: Who am I?
         run: aws sts get-caller-identity
 
@@ -46,7 +45,16 @@ jobs:
         uses: aws-actions/amazon-ecr-login@v1
 
       # ────────────────────────────────────────────────────────
-      # 3) Build & Push
+      # 3) Bootstrap Buildx (and QEMU)
+      # ────────────────────────────────────────────────────────
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      # ────────────────────────────────────────────────────────
+      # 4) Build & Push
       # ────────────────────────────────────────────────────────
       - name: Build and push Docker image
         uses: docker/build-push-action@v4
@@ -58,8 +66,6 @@ jobs:
           tags: |
             ${{ secrets.ECR_REGISTRY }}/${{ env.IMAGE_NAME }}:latest
             ${{ secrets.ECR_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
-
-
 
   Continuous_Deployment:
     name: Deploy to EC2 via Self-Hosted Runner
