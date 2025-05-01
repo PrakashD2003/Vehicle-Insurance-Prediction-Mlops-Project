@@ -1,78 +1,79 @@
 import logging
 from logging.handlers import RotatingFileHandler
-import os
-from from_root import from_root
 from datetime import datetime
+from pathlib import Path
 from colorlog import ColoredFormatter
 from src.Constants.global_logging import LOG_SESSION_TIME
 
-LOG_DIR = 'logs'
+LOG_DIR = "logs"
 MAX_LOG_SIZE = 5 * 1024 * 1024  # 5 MB
 BACKUP_COUNT = 3
 
-def configure_logger(logger_name: str, level: str = "INFO", to_console: bool = True, to_file: bool = True, log_file_name: str = None) -> logging.Logger:
+def configure_logger(
+    logger_name: str,
+    level: str = "INFO",
+    to_console: bool = True,
+    to_file: bool = True,
+    log_file_name: str = None
+) -> logging.Logger:
     """
-    Configure Logger with optional Console and Rotating File Handlers.
-    :param logger_name: Logger name (e.g., __name__)
+    Configure a logger with optional console and rotating file handlers.
+
+    :param logger_name: Name of the logger (e.g., __name__)
     :param level: Logging level ('DEBUG', 'INFO', etc.)
     :param to_console: Enable console logging
     :param to_file: Enable file logging
-    :param log_file_name: If provided, it will be used for log file, else default timestamped file name will be used
-    :return: Configured logger instance
+    :param log_file_name: Custom log file name (defaults to timestamp)
+    :return: Configured Logger instance
     """
-    
-    # Define log directory path
-    log_dir_path = os.path.join(from_root(), LOG_DIR,LOG_SESSION_TIME)
-    os.makedirs(log_dir_path, exist_ok=True)
+    # Determine project root (2 levels up: src/Logger -> src -> project root)
+    base_dir = Path(__file__).resolve().parents[2]
+    log_dir_path = base_dir / LOG_DIR / LOG_SESSION_TIME
+    log_dir_path.mkdir(parents=True, exist_ok=True)
 
-    # Create logger
+    # Create or retrieve the logger
     logger = logging.getLogger(logger_name)
-
-    # Prevent duplicate handlers on multiple logger configurations
     if logger.hasHandlers():
         logger.handlers.clear()
 
-    # Set logger level
-    level = getattr(logging, level.upper(), logging.INFO)
-    logger.setLevel(level)
+    # Set logging level
+    log_level = getattr(logging, level.upper(), logging.INFO)
+    logger.setLevel(log_level)
 
-    # Define log formatter with colored output
+    # Define colored log formatter
     formatter = ColoredFormatter(
-    "%(log_color)s %(asctime)s - %(name)s - %(levelname)s - %(message)s ",  # Added space after %(log_color)s
-    log_colors={
-        "DEBUG": "cyan",
-        "INFO": "green",
-        "WARNING": "yellow",
-        "ERROR": "red",
-        "CRITICAL": "bold_red"
-    }
-)
+        "%(log_color)s%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+        log_colors={
+            "DEBUG": "cyan",
+            "INFO": "green",
+            "WARNING": "yellow",
+            "ERROR": "red",
+            "CRITICAL": "bold_red"
+        }
+    )
 
-    
-    # Console logging configuration
+    # Console handler
     if to_console:
         console_handler = logging.StreamHandler()
-        console_handler.setLevel(level)
+        console_handler.setLevel(log_level)
         console_handler.setFormatter(formatter)
         logger.addHandler(console_handler)
 
-    # File logging configuration
+    # File handler
     if to_file:
-        # Generate log file name if not provided
         if log_file_name is None:
-            log_file_name = f"{datetime.now().strftime('%d_%m_%Y_%H_%M_%S')}"
-        
-        log_file_path = os.path.join(log_dir_path,f"{log_file_name}.log")
+            log_file_name = datetime.now().strftime("%d_%m_%Y_%H_%M_%S")
+        log_file_path = log_dir_path / f"{log_file_name}.log"
         file_handler = RotatingFileHandler(
-            filename=log_file_path,
+            filename=str(log_file_path),
             encoding="utf-8",
             maxBytes=MAX_LOG_SIZE,
             backupCount=BACKUP_COUNT
         )
-        file_handler.setLevel(level)
+        file_handler.setLevel(log_level)
         file_handler.setFormatter(formatter)
         logger.addHandler(file_handler)
 
-    # Optional: Prevent duplication with root logger
+    # Prevent log propagation to root logger
     logger.propagate = False
     return logger

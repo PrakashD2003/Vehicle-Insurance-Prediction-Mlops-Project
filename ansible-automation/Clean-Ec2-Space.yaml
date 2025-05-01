@@ -1,0 +1,66 @@
+---
+- name: Clean up disk space on EC2
+  hosts: ec2
+  become: yes
+
+  vars:
+    # How old (in days) files in /tmp and runner _diag should be to get deleted
+    tmp_file_age: 1
+    diag_file_age: 7
+    journal_max_size: "100M"
+
+  tasks:
+    - name: Autoclean APT cache
+      apt:
+        autoclean: yes
+
+    - name: Remove unused APT packages
+      apt:
+        autoremove: yes
+
+    - name: Prune all unused Docker objects
+      community.docker.docker_prune:
+        images: yes
+        containers: yes
+        volumes: yes
+        networks: yes
+
+    - name: Shrink systemd journal logs to {{ journal_max_size }}
+      shell: journalctl --vacuum-size={{ journal_max_size }}
+
+    - name: Delete files older than {{ tmp_file_age }} days in /tmp
+      find:
+        paths: /tmp
+        age: "{{ tmp_file_age }}d"
+        recurse: yes
+        file_type: file
+      register: old_tmp_files
+
+    - name: Remove old /tmp files
+      file:
+        path: "{{ item.path }}"
+        state: absent
+      loop: "{{ old_tmp_files.files }}"
+      when: old_tmp_files.matched > 0
+
+    - name: Delete runner _diag logs older than {{ diag_file_age }} days
+      find:
+        paths: /opt/actions-runner/_diag
+        age: "{{ diag_file_age }}d"
+        recurse: yes
+        file_type: file
+      register: old_diag_logs
+      ignore_errors: yes
+
+    - name: Remove old runner _diag logs
+      file:
+        path: "{{ item.path }}"
+        state: absent
+      loop: "{{ old_diag_logs.files }}"
+      when: old_diag_logs.matched > 0
+
+    - name: Ensure Docker service is running (so future CI jobs can use it)
+      service:
+        name: docker
+        state: started
+        enabled: yes
