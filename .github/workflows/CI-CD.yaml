@@ -54,10 +54,9 @@ jobs:
           IMAGE_NAME:   vehicle-insurance-project-repo
         run: |
           IMAGE_TAG=${{ github.sha }}
-          docker build \
+          docker build . \
             -t $ECR_REGISTRY/$IMAGE_NAME:latest \
-            -t $ECR_REGISTRY/$IMAGE_NAME:$IMAGE_TAG \
-            .
+            -t $ECR_REGISTRY/$IMAGE_NAME:$IMAGE_TAG
           docker push $ECR_REGISTRY/$IMAGE_NAME:latest
           docker push $ECR_REGISTRY/$IMAGE_NAME:$IMAGE_TAG
 
