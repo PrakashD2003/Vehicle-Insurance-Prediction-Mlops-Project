@@ -48,16 +48,17 @@ jobs:
       # ────────────────────────────────────────────────────────
       # 3) Build & Push
       # ────────────────────────────────────────────────────────
-      - name: Build, tag, and push image
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v4
         env:
-          ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
-          IMAGE_NAME:   vehicle-insurance-project-repo
-        run: |
-          IMAGE_TAG=${{ github.sha }}
-          # single-line build so the context (.) is always passed
-          docker build . -t $ECR_REGISTRY/$IMAGE_NAME:latest -t $ECR_REGISTRY/$IMAGE_NAME:$IMAGE_TAG
-          docker push $ECR_REGISTRY/$IMAGE_NAME:latest
-          docker push $ECR_REGISTRY/$IMAGE_NAME:$IMAGE_TAG
+          IMAGE_NAME: vehicle-insurance-project-repo
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ secrets.ECR_REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+            ${{ secrets.ECR_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+
 
 
   Continuous_Deployment:
