@@ -111,6 +111,12 @@
         src: "{{ runner_dir }}/actions-runner.tar.gz"
         dest: "{{ runner_dir }}"
         remote_src: yes
+    
+    - name: Make all runner binaries executable
+      file:
+        path: "{{ runner_dir }}"
+        recurse: yes
+        mode: "u+rX,g+X,o+X"
 
     - name: Create runner _diag directory
       file:
