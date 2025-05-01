@@ -1,0 +1,4 @@
+- name: Restart GitHub Actions runner service
+  service:
+    name: actions.runner.{{ github_repo | replace('/', '-') }}.{{ runner_name }}
+    state: restarted

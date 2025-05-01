@@ -5,7 +5,7 @@
   vars:
     runner_user:    actions-runner
     runner_group:   actions-runner
-    runner_name:   "{{ ansible_hostname }}-runner"
+    runner_name:    "{{ ansible_hostname }}-runner"
     runner_version: "2.299.0"
     runner_dir:     /opt/actions-runner
 
@@ -19,6 +19,9 @@
         state: restarted
 
   tasks:
+    # -------------------------------------
+    # A) Cleanup old runner & logs
+    # -------------------------------------
     - name: Prune Docker system
       shell: docker system prune -a --volumes --force
 
@@ -26,7 +29,8 @@
       file:
         path: "{{ runner_dir }}/_diag/*.log"
         state: absent
-    # A) Stop & remove any existing systemd service
+      ignore_errors: yes
+
     - name: Stop old runner service
       service:
         name: actions.runner.{{ github_repo | replace('/', '-') }}.{{ runner_name }}
@@ -39,27 +43,27 @@
         state: absent
       notify: Reload systemd
 
-    # B) Remove old runner user & group
-    - name: Remove runner user
+    - name: Remove old runner user
       user:
         name: "{{ runner_user }}"
         state: absent
         remove: yes
       ignore_errors: yes
 
-    - name: Remove runner group
+    - name: Remove old runner group
       group:
         name: "{{ runner_group }}"
         state: absent
       ignore_errors: yes
 
-    # C) Wipe out old installation directory
     - name: Wipe out any existing runner install
       file:
         path: "{{ runner_dir }}"
         state: absent
 
-    # D) Create runner user, group & base directory
+    # -------------------------------------
+    # B) Rebuild runner directories & user
+    # -------------------------------------
     - name: Ensure runner group exists
       group:
         name: "{{ runner_group }}"
@@ -80,7 +84,9 @@
         group: "{{ runner_group }}"
         mode: '0755'
 
-    # E) Install prerequisites and unpack runner
+    # -------------------------------------
+    # C) Install prerequisites & runner bits
+    # -------------------------------------
     - name: Refresh apt cache
       apt:
         update_cache: yes
@@ -98,7 +104,7 @@
           - awscli
           - acl
         state: present
-    
+
     - name: Add runner user to docker group
       user:
         name: "{{ runner_user }}"
@@ -118,7 +124,7 @@
         src: "{{ runner_dir }}/actions-runner.tar.gz"
         dest: "{{ runner_dir }}"
         remote_src: yes
-    
+
     - name: Make all runner binaries executable
       file:
         path: "{{ runner_dir }}"
@@ -139,15 +145,7 @@
         state: directory
         owner: "{{ runner_user }}"
         group: "{{ runner_group }}"
-        mode: '0755'
-
-    - name: Ensure runner can update itself in _work
-      file:
-        path: "{{ runner_dir }}/_work"
-        recurse: yes
-        owner: "{{ runner_user }}"
-        group: "{{ runner_group }}"
-        mode: '0755'
+        mode: '0777'
 
     - name: Fix ownership & permissions on entire runner install
       file:
@@ -157,14 +155,16 @@
         group: "{{ runner_group }}"
         mode: '0755'
 
-    # F) Register runner with GitHub and install service
+    # -------------------------------------
+    # D) Register runner & install service
+    # -------------------------------------
     - name: Fetch registration token from GitHub API
       uri:
         url: "https://api.github.com/repos/{{ github_repo }}/actions/runners/registration-token"
         method: POST
         headers:
           Authorization: "token {{ runner_token }}"
-          Accept: "application/vnd.github.v3+json"
+          Accept:       "application/vnd.github.v3+json"
         return_content: yes
         status_code: 201
       register: reg_token_response
@@ -191,6 +191,9 @@
         chdir: "{{ runner_dir }}"
         creates: "/etc/systemd/system/actions.runner.{{ github_repo | replace('/', '-') }}.{{ runner_name }}.service"
 
+    # -------------------------------------
+    # E) Drop-in override so systemd runs it correctly
+    # -------------------------------------
     - name: Create systemd override directory
       file:
         path: "/etc/systemd/system/actions.runner.{{ github_repo | replace('/', '-') }}.{{ runner_name }}.service.d"
@@ -201,10 +204,14 @@
     - name: Drop systemd override so service runs as actions-runner
       copy:
         dest: "/etc/systemd/system/actions.runner.{{ github_repo | replace('/', '-') }}.{{ runner_name }}.service.d/override.conf"
+        mode: 0644
         content: |
           [Service]
           User={{ runner_user }}
           Group={{ runner_group }}
+          WorkingDirectory={{ runner_dir }}
+          Restart=always
+          RestartSec=5
       notify:
         - Reload systemd
         - Restart runner service
@@ -215,7 +222,9 @@
         state: started
         enabled: yes
 
-    # G) Ensure Docker is running
+    # -------------------------------------
+    # F) Ensure Docker is running
+    # -------------------------------------
     - name: Enable and start Docker service
       service:
         name: docker
