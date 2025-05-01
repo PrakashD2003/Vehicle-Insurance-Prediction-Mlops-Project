@@ -106,6 +106,7 @@ jobs:
             -e DATABASE_NAME="$MONGODB_DATABASE_NAME" \
             -e COLLECTION_NAME="$MONGODB_COLLECTION_NAME" \
             -e MONGODB_URL="$MONGODB_URL" \
+            --restart unless-stopped \
             $ECR_REGISTRY/$IMAGE_NAME:latest
 
       - name: Verify container is running
