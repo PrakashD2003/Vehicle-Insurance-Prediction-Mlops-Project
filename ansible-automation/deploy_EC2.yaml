@@ -1,20 +1,79 @@
----
 - name: Prepare EC2 for self-hosted GitHub Actions
   hosts: ec2
   become: yes
 
   vars:
-    # pulled from [ec2:vars] in your inventory
-    runner_user:    "actions-runner"
-    runner_group:   "actions-runner"
-    runner_name:    "{{ ansible_hostname }}-runner"
+    runner_user:    actions-runner
+    runner_group:   actions-runner
+    runner_name:   "{{ ansible_hostname }}-runner"
     runner_version: "2.299.0"
-    runner_dir:     "/opt/actions-runner"
+    runner_dir:     /opt/actions-runner
+
+  handlers:
+    - name: Reload systemd
+      command: systemctl daemon-reload
+
+    - name: Restart runner service
+      service:
+        name: actions.runner.{{ github_repo | replace('/', '-') }}.{{ runner_name }}
+        state: restarted
 
   tasks:
-    # ────────────────────────────────────────────────────────────────
-    # 1) System packages
-    # ────────────────────────────────────────────────────────────────
+    # A) Stop & remove any existing systemd service
+    - name: Stop old runner service
+      service:
+        name: actions.runner.{{ github_repo | replace('/', '-') }}.{{ runner_name }}
+        state: stopped
+      ignore_errors: yes
+
+    - name: Remove old systemd unit
+      file:
+        path: "/etc/systemd/system/actions.runner.{{ github_repo | replace('/', '-') }}.{{ runner_name }}.service"
+        state: absent
+      notify: Reload systemd
+
+    # B) Remove old runner user & group
+    - name: Remove runner user
+      user:
+        name: "{{ runner_user }}"
+        state: absent
+        remove: yes
+      ignore_errors: yes
+
+    - name: Remove runner group
+      group:
+        name: "{{ runner_group }}"
+        state: absent
+      ignore_errors: yes
+
+    # C) Wipe out old installation directory
+    - name: Wipe out any existing runner install
+      file:
+        path: "{{ runner_dir }}"
+        state: absent
+
+    # D) Create runner user, group & base directory
+    - name: Ensure runner group exists
+      group:
+        name: "{{ runner_group }}"
+        state: present
+
+    - name: Ensure runner user exists
+      user:
+        name: "{{ runner_user }}"
+        group: "{{ runner_group }}"
+        shell: /bin/bash
+        createhome: yes
+
+    - name: Create runner directory
+      file:
+        path: "{{ runner_dir }}"
+        state: directory
+        owner: "{{ runner_user }}"
+        group: "{{ runner_group }}"
+        mode: '0755'
+
+    # E) Install prerequisites and unpack runner
     - name: Refresh apt cache
       apt:
         update_cache: yes
@@ -32,75 +91,47 @@
           - awscli
           - acl
         state: present
-
-    # ────────────────────────────────────────────────────────────────
-    # 2) Runner user & group
-    # ────────────────────────────────────────────────────────────────
-    - name: Ensure runner group exists
-      group:
-        name: "{{ runner_group }}"
-        state: present
-
-    - name: Create dedicated user for the runner
+    
+    - name: Add runner user to docker group
       user:
-        name:        "{{ runner_user }}"
-        group:       "{{ runner_group }}"
-        shell:       /bin/bash
-        createhome:  yes
+        name: "{{ runner_user }}"
+        groups: docker
+        append: yes
 
-    # ────────────────────────────────────────────────────────────────
-    # 3) Runner directory
-    # ────────────────────────────────────────────────────────────────
-    - name: Create runner directory
-      file:
-        path:  "{{ runner_dir }}"
-        state: directory
-        owner: "{{ runner_user }}"
-        group: "{{ runner_group }}"
-        mode:  '0755'
-
-    # ────────────────────────────────────────────────────────────────
-    # 4) Download & unpack the runner
-    # ────────────────────────────────────────────────────────────────
     - name: Download GitHub Actions runner package
       become_user: "{{ runner_user }}"
       get_url:
-        url:  "https://github.com/actions/runner/releases/download/v{{ runner_version }}/actions-runner-linux-x64-{{ runner_version }}.tar.gz"
+        url: "https://github.com/actions/runner/releases/download/v{{ runner_version }}/actions-runner-linux-x64-{{ runner_version }}.tar.gz"
         dest: "{{ runner_dir }}/actions-runner.tar.gz"
         mode: '0644'
 
     - name: Extract runner package
       become_user: "{{ runner_user }}"
       unarchive:
-        src:        "{{ runner_dir }}/actions-runner.tar.gz"
-        dest:       "{{ runner_dir }}"
+        src: "{{ runner_dir }}/actions-runner.tar.gz"
+        dest: "{{ runner_dir }}"
         remote_src: yes
 
-        # ────────────────────────────────────────────────────────────────
-    # 4) Download & unpack the runner
-    # ────────────────────────────────────────────────────────────────
-    - name: Extract runner package
-      become_user: "{{ runner_user }}"
-      unarchive:
-        src:        "{{ runner_dir }}/actions-runner.tar.gz"
-        dest:       "{{ runner_dir }}"
-        remote_src: yes
-
-    # ────────────────────────────────────────────────────────────────
-    # 4.1) Ensure runner can write logs & update itself
-    # ────────────────────────────────────────────────────────────────
     - name: Create runner _diag directory
       file:
         path: "{{ runner_dir }}/_diag"
         state: directory
         owner: "{{ runner_user }}"
         group: "{{ runner_group }}"
-        mode: '0755'
+        mode: '0777'
 
-    - name: Create runner _work directory
+    - name: Create runner work directory
       file:
         path: "{{ runner_dir }}/_work"
         state: directory
+        owner: "{{ runner_user }}"
+        group: "{{ runner_group }}"
+        mode: '0755'
+
+    - name: Ensure runner can update itself in _work
+      file:
+        path: "{{ runner_dir }}/_work"
+        recurse: yes
         owner: "{{ runner_user }}"
         group: "{{ runner_group }}"
         mode: '0755'
@@ -113,39 +144,22 @@
         group: "{{ runner_group }}"
         mode: '0755'
 
-
-    
-    # ────────────────────────────────────────────────────────────────
-    # 5) Get the registration token from GitHub
-    # ────────────────────────────────────────────────────────────────
-    - name: Debug GitHub repo & PAT values
-      debug:
-        msg:
-          - "Repo = {{ github_repo }}"
-          - "PAT  = {{ runner_token }}"
-
+    # F) Register runner with GitHub and install service
     - name: Fetch registration token from GitHub API
       uri:
         url: "https://api.github.com/repos/{{ github_repo }}/actions/runners/registration-token"
         method: POST
         headers:
           Authorization: "token {{ runner_token }}"
-          Accept:        "application/vnd.github.v3+json"
+          Accept: "application/vnd.github.v3+json"
         return_content: yes
         status_code: 201
       register: reg_token_response
-
-    - name: Show raw registration-token response
-      debug:
-        var: reg_token_response
 
     - name: Set runner registration token fact
       set_fact:
         runner_registration_token: "{{ reg_token_response.json.token }}"
 
-    # ────────────────────────────────────────────────────────────────
-    # 6) Configure & install the service
-    # ────────────────────────────────────────────────────────────────
     - name: Configure the GitHub Actions runner
       shell: |
         cd {{ runner_dir }}
@@ -153,7 +167,7 @@
           --url https://github.com/{{ github_repo }} \
           --token {{ runner_registration_token }} \
           --name {{ runner_name }} \
-          --labels self-hosted,Linux,x64 \
+          --labels self-hosted,Linux,X64 \
           --work _work
       args:
         creates: "{{ runner_dir }}/.runner"
@@ -164,20 +178,33 @@
         chdir: "{{ runner_dir }}"
         creates: "/etc/systemd/system/actions.runner.{{ github_repo | replace('/', '-') }}.{{ runner_name }}.service"
 
-    
+    - name: Create systemd override directory
+      file:
+        path: "/etc/systemd/system/actions.runner.{{ github_repo | replace('/', '-') }}.{{ runner_name }}.service.d"
+        state: directory
+        mode: '0755'
+      notify: Reload systemd
+
+    - name: Drop systemd override so service runs as actions-runner
+      copy:
+        dest: "/etc/systemd/system/actions.runner.{{ github_repo | replace('/', '-') }}.{{ runner_name }}.service.d/override.conf"
+        content: |
+          [Service]
+          User={{ runner_user }}
+          Group={{ runner_group }}
+      notify:
+        - Reload systemd
+        - Restart runner service
+
     - name: Ensure the runner service is started & enabled
       service:
         name: actions.runner.{{ github_repo | replace('/', '-') }}.{{ runner_name }}
         state: started
         enabled: yes
 
-      
-
-    # ────────────────────────────────────────────────────────────────
-    # 7) Docker daemon
-    # ────────────────────────────────────────────────────────────────
+    # G) Ensure Docker is running
     - name: Enable and start Docker service
       service:
-        name:    docker
-        state:   started
+        name: docker
+        state: started
         enabled: yes
