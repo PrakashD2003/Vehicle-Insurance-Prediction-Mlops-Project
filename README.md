@@ -117,29 +117,47 @@ graph TD
 ## 📂 Project Structure
 
 ```
-Vehicle-Insurance-Prediction-Mlops-Project/
-├── app/
-│   ├── main.py
-│   ├── templates/
-│   └── static/
-├── data/
-│   └── raw_data.csv
-├── models/
-│   └── model.pkl
-├── scripts/
-│   ├── data_ingestion.py
-│   ├── data_validation.py
-│   ├── data_transformation.py
-│   ├── model_training.py
-│   └── model_evaluation.py
-├── Dockerfile
-├── docker-compose.yml
-├── requirements.txt
-├── terraform/
-│   └── main.tf
-├── ansible/
-│   └── playbook.yml
-└── README.md
+├── .github/workflows/             # CI/CD pipelines (GitHub Actions)
+│   └── CI-CD.yaml
+├── Config/                        # Configuration templates (Model, Schema)
+│   ├── Model.yaml
+│   └── Schema.yaml
+├── ansible-automation/           # Ansible playbooks for EC2 runner setup
+│   ├── Clean-Ec2-Space.yaml
+│   ├── Restart-runner.yaml
+│   └── deploy_EC2.yaml
+├── infrastructure/               # Terraform IaC for AWS
+│   ├── backend-setup/
+│   ├── infra-live/
+│   └── modules/
+├── src/                          # Core ML application code
+│   ├── Cloud_Storage/            # AWS S3 interaction utils
+│   ├── Components/               # Pipeline stages (Ingestion, Transformation, etc.)
+│   ├── Configuration/            # Config management
+│   ├── Constants/                # Global constants
+│   ├── Data_Access/              # MongoDB interaction
+│   ├── Entity/                   # Config/Data classes
+│   ├── Exception/                # Custom exception handling
+│   ├── Logger/                   # Logging setup
+│   ├── Pipeline/                 # ML pipeline stages
+│   ├── Utils/                    # Helper utilities
+│   └── __init__.py
+├── static/                       # Static assets (CSS, JS)
+│   └── css.html
+├── templates/                    # HTML templates
+│   └── vehicledata.html
+├── Dockerfile                    # Multi-stage Docker setup
+├── LICENSE
+├── README.md
+├── app.py                        # Flask-based frontend
+├── demo.py                       # FastAPI demo app (for prediction)
+├── projectflow.txt               # High-level notes or flow
+├── pyproject.toml
+├── requirements.txt              # Python dependencies
+├── setup.py
+├── template.py
+└── .project-root, .dockerignore, .gitignore
+
 ```
 
 ---
