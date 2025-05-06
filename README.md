@@ -103,12 +103,12 @@ graph TD
 
 ## 🧪 Model Evaluation
 
-| Metric    | Logistic Regression | Random Forest |
-| --------- | ------------------- | ------------- |
-| Accuracy  | 0.85                | 0.89          |
-| Precision | 0.80                | 0.88          |
-| Recall    | 0.75                | 0.86          |
-| F1-Score  | 0.77                | 0.87          |
+| Metric    | Random Forest |
+| --------- | ------------- |
+| Accuracy  | 0.89          |
+| Precision | 0.88          |
+| Recall    | 0.86          |
+| F1-Score  | 0.87          |
 
 *Note: These metrics are based on the test dataset and may vary with different data splits.*
 
@@ -206,11 +206,12 @@ graph TD
    docker build -t vehicle-insurance-app .
    docker run -p 5000:5000 vehicle-insurance-app
    ```
+   *have to add env variables
 
 6. **Terraform Deployment:**
 
    ```bash
-   cd terraform
+   cd infrastucture/infra-live
    terraform init
    terraform apply
    ```
@@ -218,7 +219,7 @@ graph TD
 7. **Ansible Configuration:**
 
    ```bash
-   ansible-playbook ansible/playbook.yml
+   ansible-playbook -i inventory.ini ansible/playbook.yml
    ```
 
 *Ensure AWS credentials are properly configured before running Terraform and Ansible scripts.*
