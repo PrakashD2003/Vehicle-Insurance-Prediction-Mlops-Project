@@ -191,7 +191,7 @@
         chdir: "{{ runner_dir }}"
         creates: "/etc/systemd/system/actions.runner.{{ github_repo | replace('/', '-') }}.{{ runner_name }}.service"
 
-    # -------------------------------------
+        # -------------------------------------
     # E) Drop-in override so systemd runs it correctly
     # -------------------------------------
     - name: Create systemd override directory
@@ -204,14 +204,20 @@
     - name: Drop systemd override so service runs as actions-runner
       copy:
         dest: "/etc/systemd/system/actions.runner.{{ github_repo | replace('/', '-') }}.{{ runner_name }}.service.d/override.conf"
-        mode: 0644
+        mode: '0644'
         content: |
+          [Unit]
+          After=network.target
+
           [Service]
           User={{ runner_user }}
           Group={{ runner_group }}
           WorkingDirectory={{ runner_dir }}
           Restart=always
           RestartSec=5
+
+          [Install]
+          WantedBy=multi-user.target
       notify:
         - Reload systemd
         - Restart runner service
@@ -221,6 +227,7 @@
         name: actions.runner.{{ github_repo | replace('/', '-') }}.{{ runner_name }}
         state: started
         enabled: yes
+
 
     # -------------------------------------
     # F) Ensure Docker is running

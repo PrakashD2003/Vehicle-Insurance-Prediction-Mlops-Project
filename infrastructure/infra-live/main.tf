@@ -27,6 +27,7 @@ module "security_group" {
   sg_name        = var.sg_name
   vpc_id         = data.aws_vpc.default.id
   ingress_rules  = var.ingress_rules
+  egress_rules   = var.egress_rules
   sg_description = var.sg_description
   sg_output_file = var.sg_output_file
   sg_tags        = var.sg_tags

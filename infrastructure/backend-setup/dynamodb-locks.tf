@@ -1,5 +1,5 @@
 resource "aws_dynamodb_table" "terraform_locks" {
-  name         = "terraform-state-locks"
+  name         = var.aws_dynamodb_table_name
   billing_mode = var.billing_mode
 
 

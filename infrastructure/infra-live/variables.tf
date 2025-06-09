@@ -2,7 +2,6 @@ variable "aws_region" {
   description = "The AWS region to deploy the infrastructure"
   type        = string
   default     = "ap-south-1" # Default region can be changed as per requirement
-
 }
 
 ### ECR Repository Configuration ###

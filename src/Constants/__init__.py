@@ -86,7 +86,7 @@ MODEL_BUCKET_NAME: str = "vehicle-insurance-prediction-mlops-s3"
 MODEL_S3_PRIFIX_KEY: str = "model-registry"
 
 """
-MODEL PUSHER relates constant
+MODEL PUSHER related constant
 """
 LOCAL_ARTIFACTS_PATH: str = os.path.join("artifact", LOG_SESSION_TIME)
 LOCAL_LOGS_PATH: str = os.path.join("logs", LOG_SESSION_TIME)

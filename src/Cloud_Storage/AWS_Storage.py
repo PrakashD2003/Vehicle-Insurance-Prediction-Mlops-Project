@@ -360,6 +360,7 @@ class SimpleStorageService:
             return df
         except Exception as e:
             raise MyException(error_message=e, error_detail=traceback.format_exc(), logger=self.logger) from e
+    
     def read_dataframe_from_s3(self, s3_filename: str, bucket_name: str) -> DataFrame:
         """
         Reads a CSV file from the specified S3 bucket and converts it to a DataFrame.
