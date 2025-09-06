@@ -1,0 +1,77 @@
+graph TD
+
+    subgraph "Data Source"
+
+        A[("MongoDB Atlas<br>Raw Vehicle Data")]
+
+    end
+
+
+
+    subgraph "ML Pipeline Stages (Automated Workflow)"
+
+        B["Data Ingestion<br>(src/Components/S1_Data_Ingestion.py)"]
+
+        C["Data Validation<br>(src/Components/S2_Data_Validation.py)"]
+
+        D["Data Transformation<br>(src/Components/S3_Data_Transformation.py)"]
+
+        E["Model Training<br>(src/Components/S4_Model_Trainer.py)"]
+
+        F{"Model Evaluation<br>(Quality Gate)"}
+
+        G["Model Pusher<br>(src/Components/S6_Model_Pusher.py)"]
+
+    end
+
+
+
+    subgraph "Artifact & Model Storage"
+
+        H[(AWS S3 Bucket<br>Production Model & Artifacts)]
+
+    end
+
+
+
+    A --> B;
+
+    B --> C;
+
+    C --> D;
+
+    D --> E;
+
+    E --> F;
+
+    F -- "Fetches Production Model Metrics" --> H;
+
+    F -- "If New Model > Production Model" --> G;
+
+    F -- "If New Model <= Production Model" --> Stop((Stop Pipeline));
+
+    G --> H;
+
+
+
+    classDef datasource fill:#E5E7E9,stroke:#5D6D7E;
+
+    class A datasource;
+
+
+
+    classDef storage fill:#D5F5E3,stroke:#1E8449;
+
+    class H storage;
+
+
+
+    classDef gate fill:#FAD7A0,stroke:#B9770E,stroke-width:2px;
+
+    class F gate;
+
+    
+
+    classDef stop fill:#F5B7B1,stroke:#C0392B,stroke-width:2px;
+
+    class Stop stop;

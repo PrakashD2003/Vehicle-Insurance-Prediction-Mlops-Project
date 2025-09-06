@@ -1,0 +1,32 @@
+flowchart TD
+ subgraph subGraph0["Local / Developer"]
+        A@{ label: "Developer pushes code to 'main' branch on GitHub" }
+  end
+ subgraph subGraph1["GitHub Actions Workflow"]
+        B{"CI Job Triggered"}
+        C["Build Docker Image"]
+        D["Push Image to AWS ECR"]
+        E{"CD Job Triggered"}
+        F["Deploy to EC2"]
+  end
+ subgraph subGraph2[" AWS Cloud Infrastructure (Managed by Terraform)"]
+        G["AWS ECR - Container Registry"]
+        H["AWS EC2 Instance - Self-Hosted Runner"]
+        I["AWS S3 - Terraform State & Models"]
+        J["AWS DynamoDB - Terraform State Lock"]
+  end
+    A --> B
+    B --> C
+    C --> D
+    D --> G & E
+    E --> F
+    F -- Pulls image from --> G
+    F -- Runs container on --> H
+
+    A@{ shape: rect}
+    style A fill:#f9f,stroke:#333,stroke-width:2px
+    style B fill:#ccf,stroke:#333,stroke-width:2px
+    style E fill:#ccf,stroke:#333,stroke-width:2px
+    style H fill:#d5f5e3,stroke:#228B22,stroke-width:2px
+
+
