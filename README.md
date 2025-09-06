@@ -54,19 +54,7 @@ This project aims to build a scalable and automated pipeline that predicts the l
 
 ## 📈 ML Pipeline Architecture
 
-```mermaid
-graph TD
-    A[MongoDB] --> B[Data Ingestion]
-    B --> C[Data Validation]
-    C --> D[Data Transformation]
-    D --> E[Model Training]
-    E --> F[Model Evaluation]
-    F --> G[Model Pusher]
-    G --> H[S3 Bucket]
-    H --> I[EC2 Instance]
-    I --> J[FastAPI/Flask API]
-    J --> K[User Interface]
-```
+![Architecture Diagram](ML-Pipeline-Architecture.png)
 
 **Pipeline Components:**
 
