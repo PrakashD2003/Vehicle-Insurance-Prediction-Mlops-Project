@@ -73,7 +73,7 @@ class ModelEvaluation:
             y_test = test_arr[:,-1]
             logger.info("Test data loaded successfully and splited into dependent and independent features.")
             logger.debug(f"Loading trained model from: {self.model_trainer_artifact.trained_model_file_path}")
-            trained_model = load_object(file_path=self.model_trainer_artifact.trained_model_file_path, logger=logger)
+            # trained_model = load_object(file_path=self.model_trainer_artifact.trained_model_file_path, logger=logger)
             trained_model_accuracy_score = self.model_trainer_artifact.metric_artifact.accuracy_score
             logger.info("Model loaded successfully.")
 

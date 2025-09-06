@@ -191,7 +191,7 @@
         chdir: "{{ runner_dir }}"
         creates: "/etc/systemd/system/actions.runner.{{ github_repo | replace('/', '-') }}.{{ runner_name }}.service"
 
-        # -------------------------------------
+    # -------------------------------------
     # E) Drop-in override so systemd runs it correctly
     # -------------------------------------
     - name: Create systemd override directory

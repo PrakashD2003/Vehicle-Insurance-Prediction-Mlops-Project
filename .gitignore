@@ -1,3 +1,5 @@
+ansible-automation/inventory.ini
+
 # Local Terraform directories
 .terraform/
 
